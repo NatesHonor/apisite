@@ -3,7 +3,7 @@ const path = require('path');
 
 const router = express.Router();
 
-router.get('/download/:filename', (req, res) => {
+router.get('/:filename', (req, res) => {
   const { filename } = req.params;
   const filePath = path.join(__dirname, '../files/applications/', filename);
 

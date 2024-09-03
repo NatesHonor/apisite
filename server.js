@@ -17,7 +17,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', loginRoutes);
-app.use('/api', downloadRoutes);
+app.use('/download', downloadRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {
