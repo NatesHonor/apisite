@@ -1,10 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const loginRoutes = require('./routes/login');
+const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
-
+const versionRoutes = require('./routes/versionRoutes');
 const app = express();
+
 app.use(bodyParser.json());
 app.use(cors());
 
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
 
 app.use('/api', loginRoutes);
 app.use('/download', downloadRoutes);
+app.use('/version', versionRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {
