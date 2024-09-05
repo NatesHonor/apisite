@@ -4,6 +4,7 @@ const cors = require('cors');
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
+const fakenetworkRoutes = require('./routes/fakenetworkRoutes'); // Import the new route
 const app = express();
 
 app.use(bodyParser.json());
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 app.use('/api', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
+app.use('/fakenetwork', fakenetworkRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {
