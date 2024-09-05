@@ -1,19 +1,33 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 
 const versions = {
-  missionchief: '1.0.0',
-  testroute: '2.0.1',
+  anotherApp: '2.0.1',
 };
 
-router.get('/:appName', (req, res) => {
+router.get('/:appName', async (req, res) => {
   const { appName } = req.params;
-  const version = versions[appName];
-  
-  if (version) {
-    res.json({ version });
+
+  if (appName === 'missionchief') {
+    try {
+      const response = await axios.get('https://github.com/NatesHonor/MissionchiefBot/releases/latest', {
+        maxRedirects: 0,
+        validateStatus: status => status === 302,
+      });
+
+      const latestVersionUrl = response.headers.location; 
+      const versionwithv = latestVersionUrl.split('/').pop().replace('tag/', ''); 
+      const version = versionwithv.replace('v', '')
+
+      return res.json({ version });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch the latest version from GitHub' });
+    }
+  } else if (versions[appName]) {
+    return res.json({ version: versions[appName] });
   } else {
-    res.status(404).json({ error: 'Version not found' });
+    return res.status(404).json({ error: 'Version not found' });
   }
 });
 
