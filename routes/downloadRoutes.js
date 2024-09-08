@@ -19,12 +19,10 @@ const loadDownloadInfo = () => {
   return {};
 };
 
-// Function to save download info to JSON file
 const saveDownloadInfo = (info) => {
   fs.writeFileSync(downloadInfoPath, JSON.stringify(info, null, 2));
 };
 
-// Initialize download info for files in the directory
 const initializeDownloadInfo = () => {
   const filesDir = path.join(__dirname, '../files/applications/');
   const files = fs.readdirSync(filesDir);
@@ -51,7 +49,7 @@ router.get('/:filename', (req, res) => {
   const { filename } = req.params;
   const filePathWithExtension = path.join(__dirname, '../files/applications/', filename);
   const filePathWithoutExtensionExe = path.join(__dirname, '../files/applications/', `${filename}.exe`);
-  const filePathWithoutZip = filename === 'MissionchiefBot-Latest' ? path.join(__dirname, '../files/applications/', 'MissionchiefBot-Latest.zip') : null;
+  const filePathWithoutZip = path.join(__dirname, '../files/applications/', `${filename}.zip`);
 
   const downloadInfo = loadDownloadInfo();
 
@@ -71,13 +69,13 @@ router.get('/:filename', (req, res) => {
         incrementDownloadCount(filename);
       }
     });
-  } else if (filePathWithoutZip && fs.existsSync(filePathWithoutZip)) {
+  } else if (fs.existsSync(filePathWithoutZip)) {
     res.download(filePathWithoutZip, (err) => {
       if (err) {
         console.error('Error downloading file:', err);
         res.status(500).json({ success: false, message: 'File not found or server error' });
       } else {
-        incrementDownloadCount('MissionchiefBot-Latest.zip');
+        incrementDownloadCount(`${filename}.zip`);
       }
     });
   } else if (fs.existsSync(filePathWithoutExtensionExe)) {
@@ -98,8 +96,10 @@ router.get('/info/:filename', (req, res) => {
   const { filename } = req.params;
   const downloadInfo = loadDownloadInfo();
 
-  if (downloadInfo[filename]) {
-    res.json(downloadInfo[filename]);
+  const fileInfo = downloadInfo[filename] || downloadInfo[`${filename}.zip`] || downloadInfo[`${filename}.exe`];
+
+  if (fileInfo) {
+    res.json(fileInfo);
   } else {
     res.status(404).json({ success: false, message: 'File not found' });
   }
