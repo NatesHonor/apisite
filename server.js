@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const loginRoutes = require('./routes/loginRoutes');
+const buildingRoutes = require('./routes/buildingRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
@@ -18,7 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', loginRoutes);
+app.use('/militarychief', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
 app.use('/fakenetwork', fakenetworkRoutes);
