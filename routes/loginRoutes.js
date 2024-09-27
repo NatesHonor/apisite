@@ -45,8 +45,13 @@ passport.use(new LocalStrategy({
 
 passport.serializeUser((user, done) => {
   console.log('Serializing user:', user); 
-  done(null, user.userid);
+  if (user && user.id) {
+    done(null, user.id);
+  } else {
+    done(new Error('User serialization failed: User ID is undefined'));
+  }
 });
+
 
 
 passport.deserializeUser(async (id, done) => {
