@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const passport = require('passport');
 const loginRoutes = require('./routes/loginRoutes');
 const buildingRoutes = require('./routes/buildingRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
@@ -10,7 +11,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
-
+app.use(passport.initialize()); 
 app.use((req, res, next) => {
   if (req.method === 'POST') {
     console.log(`Received POST request to ${req.url}`);
