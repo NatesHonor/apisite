@@ -10,6 +10,7 @@ const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const app = express();
+require('dotenv').config();
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
