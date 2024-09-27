@@ -23,6 +23,10 @@ redisClient.connect()
   .then(() => console.log("Redis client connected"))
   .catch((err) => console.error("Redis connection error:", err));
 
+redisClient.on('error', (err) => {
+  console.error('Redis client error:', err);
+});
+
 app.use(session({
   store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET,
