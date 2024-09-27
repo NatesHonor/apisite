@@ -2,16 +2,26 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const passport = require('passport');
+const session = require('express-session');
 const loginRoutes = require('./routes/loginRoutes');
-const buildingRoutes = require('./routes/buildingRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const app = express();
 
+app.use(session({
+  secret: process.env.SESSION_SECRET, 
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } 
+}));
+
 app.use(bodyParser.json());
 app.use(cors());
-app.use(passport.initialize()); 
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use((req, res, next) => {
   if (req.method === 'POST') {
     console.log(`Received POST request to ${req.url}`);
