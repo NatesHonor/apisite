@@ -5,7 +5,8 @@ const passport = require('passport');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
-require('dotenv').config(); 
+const { createPool } = require('generic-pool');
+require('dotenv').config();
 
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
@@ -14,25 +15,42 @@ const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 
 const app = express();
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL,
-  legacyMode: true
+const redisClientFactory = {
+  create: () => {
+    const client = createClient({
+      url: process.env.REDIS_URL,
+      legacyMode: true
+    });
+    return client.connect().then(() => client);
+  },
+  destroy: (client) => {
+    return client.quit();
+  }
+};
+
+const redisPool = createPool(redisClientFactory, {
+  max: 10, // maximum size of the pool
+  min: 2   // minimum size of the pool
 });
 
-redisClient.connect()
-  .then(() => console.log("Redis client connected"))
-  .catch((err) => console.error("Redis connection error:", err));
-
-redisClient.on('error', (err) => {
-  console.error('Redis client error:', err);
+app.use((req, res, next) => {
+  redisPool.acquire()
+    .then(client => {
+      req.redisClient = client;
+      next();
+    })
+    .catch(err => {
+      console.error('Redis connection error:', err);
+      res.status(500).send('Redis connection error');
+    });
 });
 
 app.use(session({
-  store: new RedisStore({ client: redisClient }),
+  store: new RedisStore({ client: redisPool }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } 
+  cookie: { secure: false }
 }));
 
 app.use(bodyParser.json());
