@@ -65,20 +65,6 @@ router.post('/login', passport.authenticate('local', {
   failureFlash: true
 }));
 
-router.get('/credits/:email', async (req, res) => {
-  const { email } = req.params;
-  try {
-    const [results] = await pool.query('SELECT credits FROM account_data WHERE email = ?', [email]);
-    if (results.length === 0) {
-      return res.json({ success: false, message: 'User not found' });
-    } else {
-      const user = results[0];
-      res.json({ success: true, credits: user.credits });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+
 
 module.exports = router;
