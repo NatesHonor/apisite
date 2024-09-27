@@ -20,7 +20,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/militarychief', loginRoutes);
+app.use('/login', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
 app.use('/fakenetwork', fakenetworkRoutes);
