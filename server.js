@@ -15,42 +15,66 @@ const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 
 const app = express();
 
+// Create a Redis client factory
 const redisClientFactory = {
-  create: () => {
+  create: async () => {
     const client = createClient({
       url: process.env.REDIS_URL,
-      legacyMode: true
+      legacyMode: true,
     });
-    return client.connect().then(() => client);
+    await client.connect();
+    return client;
   },
-  destroy: (client) => {
-    return client.quit();
-  }
+  destroy: async (client) => {
+    await client.quit();
+  },
 };
 
 const redisPool = createPool(redisClientFactory, {
   max: 10, // maximum size of the pool
-  min: 2   // minimum size of the pool
+  min: 2,  // minimum size of the pool
 });
 
-app.use((req, res, next) => {
-  redisPool.acquire()
-    .then(client => {
-      req.redisClient = client;
-      next();
-    })
-    .catch(err => {
-      console.error('Redis connection error:', err);
-      res.status(500).send('Redis connection error');
-    });
-});
+// Custom Redis store to use with the pool
+class RedisStoreWithPool extends RedisStore {
+  async get(key, callback) {
+    const client = await redisPool.acquire();
+    try {
+      const value = await super.get(key, callback);
+      return value;
+    } finally {
+      redisPool.release(client);
+    }
+  }
 
+  async set(key, value, callback) {
+    const client = await redisPool.acquire();
+    try {
+      await super.set(key, value, callback);
+    } finally {
+      redisPool.release(client);
+    }
+  }
+
+  async del(key, callback) {
+    const client = await redisPool.acquire();
+    try {
+      await super.del(key, callback);
+    } finally {
+      redisPool.release(client);
+    }
+  }
+}
+
+// Use RedisStore with connection pool
 app.use(session({
-  store: new RedisStore({ client: redisPool }),
+  store: new RedisStoreWithPool({
+    client: redisPool,
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  cookie: { secure: false }, // Change to true if using HTTPS
 }));
 
 app.use(bodyParser.json());
