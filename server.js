@@ -4,24 +4,28 @@ const cors = require('cors');
 const passport = require('passport');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
-const { createClient } = require('redis'); 
+const { createClient } = require('redis');
+require('dotenv').config(); 
+
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
+
 const app = express();
-require('dotenv').config();
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
   legacyMode: true
 });
 
-redisClient.connect().catch(console.error);
+redisClient.connect()
+  .then(() => console.log("Redis client connected"))
+  .catch((err) => console.error("Redis connection error:", err));
 
 app.use(session({
   store: new RedisStore({ client: redisClient }),
-  secret: process.env.SESSION_SECRET, 
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false } 
