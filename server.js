@@ -19,6 +19,14 @@ const redisClient = createClient({
   legacyMode: true
 });
 
+redisClient.on('connect', () => {
+  console.log('Connected to Redis successfully');
+});
+
+redisClient.on('error', (err) => {
+  console.error('Redis error:', err);
+});
+
 redisClient.connect().catch(console.error);
 
 app.use(session({
