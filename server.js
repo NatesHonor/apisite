@@ -3,13 +3,23 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const passport = require('passport');
 const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const { createClient } = require('redis'); 
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const app = express();
 
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+  legacyMode: true
+});
+
+redisClient.connect().catch(console.error);
+
 app.use(session({
+  store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET, 
   resave: false,
   saveUninitialized: false,
