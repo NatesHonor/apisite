@@ -44,9 +44,10 @@ passport.use(new LocalStrategy({
 }));
 
 passport.serializeUser((user, done) => {
-  console.log('Serializing user:', user.id);
-  done(null, user.id);
+  console.log('Serializing user:', user); 
+  done(null, user.userid);
 });
+
 
 passport.deserializeUser(async (id, done) => {
   try {
@@ -92,7 +93,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login route
 router.post('/login', (req, res, next) => {
   console.log('Login route hit:', req.body);
   passport.authenticate('local', (err, user, info) => {
