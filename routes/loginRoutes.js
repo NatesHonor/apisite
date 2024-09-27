@@ -3,6 +3,12 @@ const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const pool = require('../utils/db');
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const redis = require('redis');
+
+const redisClient = redis.createClient();
+redisClient.on('error', (err) => console.error('Redis error:', err));
 
 const router = express.Router();
 
@@ -36,7 +42,6 @@ passport.use(new LocalStrategy({
   }
 }));
 
-
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -52,6 +57,13 @@ passport.deserializeUser(async (id, done) => {
     return done(error);
   }
 });
+
+router.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: false
+}));
 
 router.post('/register', async (req, res) => {
   const { email, username, password } = req.body;
