@@ -5,7 +5,6 @@ const fs = require('fs');
 const router = express.Router();
 const downloadInfoPath = path.join(__dirname, '../files/downloadInfo.json');
 
-// Function to load download info from JSON file
 const loadDownloadInfo = () => {
   if (fs.existsSync(downloadInfoPath)) {
     const data = fs.readFileSync(downloadInfoPath, 'utf8');

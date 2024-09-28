@@ -5,11 +5,21 @@ const LocalStrategy = require('passport-local').Strategy;
 const pool = require('../utils/db');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
-const redis = require('redis');
+const { createClient } = require('redis');
+require('dotenv').config();
 
-const redisClient = redis.createClient();
+const customSerializer = {
+  stringify: (obj) => JSON.stringify(obj),
+  parse: (str) => JSON.parse(str)
+};
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+  legacyMode: true
+});
 redisClient.on('error', (err) => console.error('Redis error:', err));
 redisClient.on('connect', () => console.log('Connected to Redis'));
+redisClient.connect().catch(console.error);
 
 const router = express.Router();
 
@@ -52,8 +62,6 @@ passport.serializeUser((user, done) => {
   }
 });
 
-
-
 passport.deserializeUser(async (id, done) => {
   try {
     console.log('Deserializing user:', id);
@@ -71,7 +79,10 @@ passport.deserializeUser(async (id, done) => {
 });
 
 router.use(session({
-  store: new RedisStore({ client: redisClient }),
+  store: new RedisStore({
+    client: redisClient,
+    serializer: customSerializer
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

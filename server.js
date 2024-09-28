@@ -16,7 +16,7 @@ const app = express();
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
-  legacyMode: true
+  legacyMode: false
 });
 
 redisClient.on('connect', () => {
