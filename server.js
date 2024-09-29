@@ -43,10 +43,20 @@ app.use(cors());
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use((req, res, next) => {
+app.use((req, next) => {
   if (req.method === 'POST') {
     console.log(`Received POST request to ${req.url}`);
     console.log('Request data:', req.body);
+  }
+  next();
+});
+
+app.use((req, res, next) => {
+  if (req.path !== '/' && req.method !== 'GET') {
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== process.env.API_KEY) {
+      return res.status(403).json({ error: 'Forbidden: Invalid API key' });
+    }
   }
   next();
 });
@@ -56,10 +66,9 @@ app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
 app.use('/fakenetwork', fakenetworkRoutes);
 
-// Serve static files from the "public" directory
 app.use(express.static('public'));
 
-app.get('/', (req, res) => {
+app.get('/', (res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -100,6 +109,10 @@ app.get('/', (req, res) => {
           text-decoration: none;
           margin: 0 10px;
         }
+        .warning {
+          color: red;
+          font-weight: bold;
+        }
       </style>
     </head>
     <body>
@@ -109,6 +122,7 @@ app.get('/', (req, res) => {
       <main>
         <h2>Status 200 OK</h2>
         <p>Welcome to Nate's Services API! We're here to provide you with the best services.</p>
+        <p class="warning">Unauthorized use of this API is prohibited.</p>
       </main>
       <footer>
         <p>© 2024 Nate's Services. All rights reserved.</p>
