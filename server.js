@@ -43,7 +43,7 @@ app.use(cors());
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use((req, next) => {
+app.use((req, res, next) => {
   if (req.method === 'POST') {
     console.log(`Received POST request to ${req.url}`);
     console.log('Request data:', req.body);
@@ -51,6 +51,7 @@ app.use((req, next) => {
   next();
 });
 
+// Middleware to check for API key
 app.use((req, res, next) => {
   if (req.path !== '/' && req.method !== 'GET') {
     const apiKey = req.headers['x-api-key'];
@@ -68,7 +69,7 @@ app.use('/fakenetwork', fakenetworkRoutes);
 
 app.use(express.static('public'));
 
-app.get('/', (res) => {
+app.get('/', (req, res) => { // Added req parameter
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -121,7 +122,7 @@ app.get('/', (res) => {
       </header>
       <main>
         <h2>Status 200 OK</h2>
-        <p>Welcome to Nate's Services API! We're here to provide you with the best services.</p>
+        <p>Welcome to Nate's Services API!</p>
         <p class="warning">Unauthorized use of this API is prohibited.</p>
       </main>
       <footer>
