@@ -51,9 +51,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware to check for API key
 app.use((req, res, next) => {
-  if (req.path !== '/' && req.method !== 'GET') {
+  if (req.path !== '/' && req.method !== 'GET' || req.path !== '/' && req.method !== 'POST') {
     const apiKey = req.headers['x-api-key'];
     if (apiKey !== process.env.API_KEY) {
       return res.status(403).json({ error: 'Forbidden: Invalid API key' });
@@ -69,7 +68,7 @@ app.use('/fakenetwork', fakenetworkRoutes);
 
 app.use(express.static('public'));
 
-app.get('/', (req, res) => { // Added req parameter
+app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
