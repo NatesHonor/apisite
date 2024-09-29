@@ -56,8 +56,71 @@ app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
 app.use('/fakenetwork', fakenetworkRoutes);
 
+// Serve static files from the "public" directory
+app.use(express.static('public'));
+
 app.get('/', (req, res) => {
-  res.json({ status: 'Status 200 OK' });
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Nate's Services API</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          text-align: center;
+          background-color: #f4f4f4;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        header {
+          background-color: #4CAF50;
+          color: white;
+          padding: 20px 0;
+        }
+        header h1 {
+          margin: 0;
+        }
+        main {
+          padding: 20px;
+        }
+        footer {
+          background-color: #333;
+          color: white;
+          padding: 10px 0;
+          position: fixed;
+          width: 100%;
+          bottom: 0;
+        }
+        footer a {
+          color: #4CAF50;
+          text-decoration: none;
+          margin: 0 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <header>
+        <h1>Nate's Services API</h1>
+      </header>
+      <main>
+        <h2>Status 200 OK</h2>
+        <p>Welcome to Nate's Services API! We're here to provide you with the best services.</p>
+      </main>
+      <footer>
+        <p>© 2024 Nate's Services. All rights reserved.</p>
+        <p>
+          <a href="https://support.natemarcellus.com">Support</a> |
+          <a href="https://files.natemarcellus.com">Files</a> |
+          <a href="https://links.natemarcellus.com">Links</a>
+        </p>
+      </footer>
+    </body>
+    </html>
+  `);
 });
 
 const PORT = 5000;
