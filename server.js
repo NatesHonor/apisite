@@ -52,7 +52,13 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  if (req.path !== '/' && req.method !== 'GET' || req.path !== '/' && req.method !== 'POST') {
+  const isPublicRoute = req.path === '/version/missionchief';
+  
+  if (isPublicRoute) {
+    return next();
+  }
+
+  if (req.path !== '/' && req.path !== '/version' && req.method !== 'GET' || req.path !== '/' && req.path !== '/version' && req.method !== 'POST') {
     const apiKey = req.headers['x-api-key'];
     if (apiKey !== process.env.API_KEY) {
       return res.status(403).json({ error: 'Forbidden: Invalid API key' });
@@ -78,15 +84,15 @@ app.get('/', (req, res) => {
       <title>Nate's Services API</title>
       <style>
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           text-align: center;
-          background-color: #f4f4f4;
+          background-color: #f0f0f0;
           color: #333;
           margin: 0;
           padding: 0;
         }
         header {
-          background-color: #4CAF50;
+          background-color: #0078D7;
           color: white;
           padding: 20px 0;
         }
@@ -105,13 +111,17 @@ app.get('/', (req, res) => {
           bottom: 0;
         }
         footer a {
-          color: #4CAF50;
+          color: #0078D7;
           text-decoration: none;
           margin: 0 10px;
         }
         .warning {
           color: red;
           font-weight: bold;
+        }
+        .usage {
+          margin-top: 20px;
+          font-size: 1.2em;
         }
       </style>
     </head>
@@ -123,6 +133,9 @@ app.get('/', (req, res) => {
         <h2>Status 200 OK</h2>
         <p>Welcome to Nate's Services API!</p>
         <p class="warning">Unauthorized use of this API is prohibited.</p>
+        <div class="usage">
+          <p>For usage information, visit <a href="https://docs.natemarcellus.com">docs.natemarcellus.com</a></p>
+        </div>
       </main>
       <footer>
         <p>© 2024 Nate's Services. All rights reserved.</p>
