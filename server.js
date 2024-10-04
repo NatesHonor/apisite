@@ -52,18 +52,18 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  const isPublicRoute = req.path === '/version/missionchief';
-  
-
-
-  if (req.path !== '/' && req.method !== 'GET' || req.path !== '/' && req.method !== 'POST') {
-    const apiKey = req.headers['x-api-key'];
-    if (apiKey !== process.env.API_KEY) {
-      return res.status(403).json({ error: 'Forbidden: Invalid API key' });
-    }
+  if (req.path === '/') {
+    return next();
   }
+
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ error: 'Forbidden: Invalid API key' });
+  }
+  
   next();
 });
+
 
 app.use('/sso', loginRoutes);
 app.use('/download', downloadRoutes);
