@@ -95,5 +95,21 @@ router.post('/message', (req, res) => {
   res.status(200).json({ message: 'Message added successfully!', ticket });
 });
 
+router.get('/:id', (req, res) => {
+  const { id } = req.params;
+  console.log(`Fetching details for ticket ID: ${id}`);
+
+  const tickets = readTicketsFile();
+  const ticket = tickets.find(t => t.id === id); 
+
+  if (!ticket) {
+    console.error(`Error: Ticket with ID ${id} not found`);
+    return res.status(404).json({ error: 'Ticket not found.' });
+  }
+
+  console.log(`Ticket found:`, ticket);
+  res.status(200).json({ ticket });
+});
+
 
 module.exports = router;
