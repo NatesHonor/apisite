@@ -61,7 +61,13 @@ router.post('/message', (req, res) => {
   const { ticketNumber, messageContent } = req.body;
   const { username } = req.user;
 
+  console.log('Received message request:');
+  console.log('Username:', username);
+  console.log('Ticket number:', ticketNumber);
+  console.log('Message content:', messageContent);
+
   if (!ticketNumber || !messageContent) {
+    console.error('Error: Missing ticket number or message content');
     return res.status(400).json({ error: 'Ticket number and message content are required.' });
   }
 
@@ -69,6 +75,7 @@ router.post('/message', (req, res) => {
   const ticket = tickets.find(t => t.ticketNumber === parseInt(ticketNumber));
 
   if (!ticket) {
+    console.error(`Error: Ticket with number ${ticketNumber} not found`);
     return res.status(404).json({ error: 'Ticket not found.' });
   }
 
@@ -79,22 +86,14 @@ router.post('/message', (req, res) => {
     sentAt: new Date()
   };
 
+  console.log('New message:', newMessage);
+
   ticket.messages.push(newMessage);
   writeTicketsFile(tickets);
 
+  console.log('Message added successfully to ticket:', ticketNumber);
   res.status(200).json({ message: 'Message added successfully!', ticket });
 });
 
-router.get('/:ticketId', (req, res) => {
-    const { ticketId } = req.params;
-    const tickets = readTicketsFile();
-    const ticket = tickets.find(t => t.id === ticketId);
-  
-    if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found.' });
-    }
-  
-    res.status(200).json({ ticket });
-  });
 
 module.exports = router;
