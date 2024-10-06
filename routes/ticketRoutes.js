@@ -88,16 +88,20 @@ router.post('/message', async (req, res) => {
 
 router.get('/:ticketNumber', async (req, res) => {
   const { ticketNumber } = req.params;
+  console.log(`Fetching ticket with ticketNumber: ${ticketNumber}`); // Logging
 
   try {
     const ticket = await Ticket.findOne({ ticketNumber });
+    console.log(`Ticket found: ${ticket}`); // Log the result
 
     if (!ticket) {
+      console.log(`Ticket with number ${ticketNumber} not found.`);
       return res.status(404).json({ error: 'Ticket not found.' });
     }
 
     res.status(200).json({ ticket });
   } catch (error) {
+    console.error(`Error fetching ticket: ${error.message}`); // Log error details
     res.status(500).json({ error: 'Failed to retrieve ticket.' });
   }
 });
