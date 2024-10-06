@@ -122,8 +122,6 @@
     })(req, res, next);
   });
   
-  
-
   router.post('/register', async (req, res) => {
     const { email, username, password } = req.body;
     try {
@@ -131,36 +129,36 @@
       const [results] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
       if (results.length > 0) {
         console.log('User already exists:', email);
-        return res.json({ success: false, message: 'User already exists' });
-      } else {
-        const hashedPassword = bcrypt.hashSync(password, 10);
-        await pool.query('INSERT INTO account_data (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword]);
-
-        console.log('User registered successfully:', email);
-        const [newUser] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
-
-        req.logIn(newUser[0], (err) => {
-          if (err) {
-            console.error('Auto-login error:', err);
-            return res.status(500).json({ success: false, message: 'Auto-login failed' });
-          }
-          return res.json({
-            success: true,
-            message: 'Registration successful, logged in',
-            sessionID: req.sessionID,
-            user: {
-              id: newUser[0].id,
-              email: newUser[0].email,
-              username: newUser[0].username
-            }
-          });
-        });
+        return res.status(409).json({ success: false, message: 'User already exists' });
       }
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      const insertResult = await pool.query('INSERT INTO account_data (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword]);
+      if (insertResult.affectedRows === 0) {
+        console.error('Failed to insert user into database:', email);
+        return res.status(500).json({ success: false, message: 'User registration failed' });
+      }
+      console.log('User registered successfully:', email);
+      const [newUser] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
+      req.logIn(newUser[0], (err) => {
+        if (err) {
+          console.error('Auto-login error:', err);
+          return res.status(500).json({ success: false, message: 'Auto-login failed' });
+        }
+        return res.json({
+          success: true,
+          message: 'Registration successful, logged in',
+          sessionID: req.sessionID,
+          user: {
+            id: newUser[0].id,
+            email: newUser[0].email,
+            username: newUser[0].username
+          }
+        });
+      });
     } catch (error) {
       console.error('Error during registration:', error);
       res.status(500).json({ success: false, message: 'Server error' });
     }
   });
-
-
+  
   module.exports = router;
