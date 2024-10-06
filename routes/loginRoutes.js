@@ -41,12 +41,13 @@
         console.log('Invalid password for user:', email);
         return done(null, false, { message: 'Invalid credentials' });
       }
-      return done(null, user);
+      return done(null, user); 
     } catch (error) {
       console.error('Error during login:', error);
       return done(error);
     }
   }));
+  
 
   passport.serializeUser((user, done) => {
     console.log('Serializing user:', user); 
@@ -101,7 +102,11 @@
           return next(err);
         }
         console.log('Login successful for user:', user);
-        const token = jwt.sign({ id: user.id, email: user.email, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign(
+          { id: user.id, email: user.email, username: user.username, role: user.role },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
         return res.json({
           success: true,
           message: 'Login successful',
@@ -109,12 +114,14 @@
           user: {
             id: user.id,
             email: user.email,
-            username: user.username
-          }
+            username: user.username,
+            role: user.role,
+          },
         });
       });
     })(req, res, next);
   });
+  
   
 
   router.post('/register', async (req, res) => {
