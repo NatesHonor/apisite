@@ -13,13 +13,15 @@ const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
 const mongoose = require('mongoose');
 
 const mongoURI = process.env.MONGO_URI;
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
+const mongoOptions = {};
+
+mongoose.connect(mongoURI, mongoOptions)
   .catch(err => console.error('MongoDB connection error:', err));
 
 const redisClient = createClient({
@@ -95,9 +97,8 @@ const validateToken = (req, res, next) => {
   });
 };
 
-
 app.use('/tickets', validateToken, ticketRoutes);
-app.use('/user', validateToken, userRoutes)
+app.use('/user', validateToken, userRoutes);
 app.use('/sso', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
