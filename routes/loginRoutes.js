@@ -101,7 +101,7 @@
           return next(err);
         }
         console.log('Login successful for user:', user);
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id, email: user.email, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
         return res.json({
           success: true,
           message: 'Login successful',
@@ -115,6 +115,7 @@
       });
     })(req, res, next);
   });
+  
 
   router.post('/register', async (req, res) => {
     const { email, username, password } = req.body;
