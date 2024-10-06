@@ -6,6 +6,8 @@
   const session = require('express-session');
   const RedisStore = require('connect-redis').default;
   const { createClient } = require('redis');
+  const jwt = require('jsonwebtoken');
+  const JWT_SECRET = process.env.JWT_SECRET;
   require('dotenv').config();
 
   const customSerializer = {
@@ -106,10 +108,11 @@
           return next(err);
         }
         console.log('Login successful for user:', user);
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
         return res.json({
           success: true,
           message: 'Login successful',
-          sessionID: req.sessionID,
+          token,
           user: {
             id: user.id,
             email: user.email,
