@@ -18,38 +18,48 @@ const writeTicketsFile = (data) => {
 };
 
 router.post('/create', (req, res) => {
-    const { title, description } = req.body;
-    const { username } = req.user;
-  
-    if (!title || !description) {
-      return res.status(400).json({ error: 'Title and description are required.' });
-    }
-    const ticketNumber = generateTicketNumber();
-  
-    const newTicket = {
-      id: uuidv4(),
-      ticketNumber,
-      title,
-      description,
-      username,
-      messages: [],
-      createdAt: new Date(),
-      status: 'Open'
-    };
-  
-    const tickets = readTicketsFile();
-    tickets.push(newTicket);
-    writeTicketsFile(tickets);
-  
-    res.status(201).json({ message: 'Ticket created successfully!', ticket: newTicket });
-  });
-    const generateTicketNumber = () => {
-    return Math.floor(1000 + Math.random() * 9000);
+  const { title, description } = req.body;
+  const { username } = req.user;
+
+  if (!title || !description) {
+    return res.status(400).json({ error: 'Title and description are required.' });
+  }
+  const ticketNumber = generateTicketNumber();
+
+  const newTicket = {
+    id: uuidv4(),
+    ticketNumber,
+    title,
+    description,
+    username,
+    messages: [],
+    createdAt: new Date(),
+    status: 'Open'
   };
-  
+
+  const tickets = readTicketsFile();
+  tickets.push(newTicket);
+  writeTicketsFile(tickets);
+
+  res.status(201).json({ message: 'Ticket created successfully!', ticket: newTicket });
+});
+
+const generateTicketNumber = () => {
+  return Math.floor(1000 + Math.random() * 9000);
+};
+
+router.get('/all', (req, res) => {
+  const tickets = readTicketsFile();
+
+  if (tickets.length === 0) {
+    return res.status(404).json({ message: 'No tickets found.' });
+  }
+
+  res.status(200).json({ tickets });
+});
 
 router.get('/list', (req, res) => {
-  const { username } = req.user; 
+  const { username } = req.user;
 
   const tickets = readTicketsFile();
   const userTickets = tickets.filter(ticket => ticket.username === username);
@@ -100,7 +110,7 @@ router.get('/:id', (req, res) => {
   console.log(`Fetching details for ticket ID: ${id}`);
 
   const tickets = readTicketsFile();
-  const ticket = tickets.find(t => t.id === id); 
+  const ticket = tickets.find(t => t.id === id);
 
   if (!ticket) {
     console.error(`Error: Ticket with ID ${id} not found`);
@@ -110,6 +120,5 @@ router.get('/:id', (req, res) => {
   console.log(`Ticket found:`, ticket);
   res.status(200).json({ ticket });
 });
-
 
 module.exports = router;
