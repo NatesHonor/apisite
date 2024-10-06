@@ -110,4 +110,32 @@ router.get('/:id', (req, res) => {
   res.status(200).json({ ticket });
 });
 
+router.post('/:id/close', (req, res) => {
+  const { id } = req.params;
+  const { role } = req.user.role;
+  
+  if (role !== 'administrator') {
+    return res.status(403).json({ error: 'Unauthorized. Only administrators can close tickets.' });
+  }
+
+  const tickets = readTicketsFile();
+  const ticket = tickets.find(t => t.id === id);
+
+  if (!ticket) {
+    return res.status(404).json({ error: 'Ticket not found.' });
+  }
+
+  if (ticket.status === 'Closed') {
+    return res.status(400).json({ error: 'Ticket is already closed.' });
+  }
+
+  ticket.status = 'Closed';
+  ticket.closedAt = new Date();
+
+  writeTicketsFile(tickets);
+
+  res.status(200).json({ message: 'Ticket closed successfully!', ticket });
+});
+
+
 module.exports = router;
