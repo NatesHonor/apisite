@@ -13,7 +13,7 @@ const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
-
+const userRoutes = require('./routes/userRoutes')
 const app = express();
 
 const redisClient = createClient({
@@ -90,7 +90,7 @@ const validateToken = (req, res, next) => {
 
 
 app.use('/tickets', validateToken, ticketRoutes);
-
+app.use('/user', validateToken, userRoutes)
 app.use('/sso', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
