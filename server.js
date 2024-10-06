@@ -77,9 +77,11 @@ const validateToken = (req, res, next) => {
       console.error('Token verification error:', err);
       return res.status(403).json({ error: 'Unauthorized: Invalid token' });
     }
+    req.user = {
+      id: decoded.id,
+      email: decoded.email
+    };
 
-    req.userId = decoded.id;
-    req.userEmail = decoded.email;
     next();
   });
 };
