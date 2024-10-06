@@ -4,6 +4,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const ticketsFilePath = path.join(__dirname, '../tickets.json');
+
 const readTicketsFile = () => {
   if (!fs.existsSync(ticketsFilePath)) {
     return [];
@@ -11,22 +12,19 @@ const readTicketsFile = () => {
   const data = fs.readFileSync(ticketsFilePath, 'utf8');
   return JSON.parse(data);
 };
+
 const writeTicketsFile = (data) => {
   fs.writeFileSync(ticketsFilePath, JSON.stringify(data, null, 2), 'utf8');
 };
-const validateToken = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
-  }
-  next();
-};
 
-router.post('/create', validateToken, (req, res) => {
-  const { title, description, username } = req.body;
-  if (!title || !description || !username) {
-    return res.status(400).json({ error: 'Title, description, and username are required.' });
+router.post('/create', (req, res) => {
+  const { title, description } = req.body;
+  const { username } = req.user;
+
+  if (!title || !description) {
+    return res.status(400).json({ error: 'Title and description are required.' });
   }
+
   const ticketNumber = Math.floor(1000 + Math.random() * 9000);
   const newTicket = {
     id: uuidv4(),
@@ -46,11 +44,21 @@ router.post('/create', validateToken, (req, res) => {
   res.status(201).json({ message: 'Ticket created successfully!', ticket: newTicket });
 });
 
-router.post('/message', validateToken, (req, res) => {
-  const { ticketNumber, username, messageContent } = req.body;
+router.get('/list', (req, res) => {
+  const { username } = req.user;  // Extract username from the token
 
-  if (!ticketNumber || !username || !messageContent) {
-    return res.status(400).json({ error: 'Ticket number, username, and message content are required.' });
+  const tickets = readTicketsFile();
+  const userTickets = tickets.filter(ticket => ticket.username === username);
+
+  res.status(200).json({ tickets: userTickets });
+});
+
+router.post('/message', (req, res) => {
+  const { ticketNumber, messageContent } = req.body;
+  const { username } = req.user;
+
+  if (!ticketNumber || !messageContent) {
+    return res.status(400).json({ error: 'Ticket number and message content are required.' });
   }
 
   const tickets = readTicketsFile();
