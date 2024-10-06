@@ -64,25 +64,30 @@ app.use((req, res, next) => {
 });
 
 const validateToken = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided or invalid format' });
   }
 
-  const bearerToken = token.split(' ')[1];
+  const bearerToken = authHeader.split(' ')[1];
+
   jwt.verify(bearerToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error('Token verification error:', err);
       return res.status(403).json({ error: 'Unauthorized: Invalid token' });
     }
+
     req.user = {
       id: decoded.id,
+      username: decoded.username,
       email: decoded.email
     };
 
     next();
   });
 };
+
 
 app.use('/tickets', validateToken, ticketRoutes);
 
