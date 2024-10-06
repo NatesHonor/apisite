@@ -1,10 +1,9 @@
 const express = require('express');
 const pool = require('../utils/db');
-const { verifyToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/role', verifyToken, async (req, res) => {
+router.get('/role', async (req, res) => {
   try {
     const userId = req.user.id; 
     const [results] = await pool.query('SELECT role FROM account_data WHERE userid = ?', [userId]);
