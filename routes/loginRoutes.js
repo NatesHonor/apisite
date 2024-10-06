@@ -26,6 +26,9 @@ redisClient.connect().catch(console.error);
 
 const router = express.Router();
 
+router.use(passport.initialize());
+router.use(passport.session());
+
 passport.use(new LocalStrategy({
   usernameField: 'email',
   passwordField: 'password'
@@ -143,7 +146,7 @@ router.post('/register', async (req, res) => {
     req.logIn(newUser[0], (err) => {
       if (err) {
         console.error('Auto-login error:', err);
-        return res.status(500).json({ success: false, message: 'Auto-login failed' });
+        return res.status(500).json({ success: false, message: 'Auto-login failed', error: err.message });
       }
       return res.json({
         success: true,
