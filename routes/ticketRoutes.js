@@ -18,31 +18,35 @@ const writeTicketsFile = (data) => {
 };
 
 router.post('/create', (req, res) => {
-  const { title, description } = req.body;
-  const { username } = req.user;
-
-  if (!title || !description) {
-    return res.status(400).json({ error: 'Title and description are required.' });
-  }
-
-  const ticketNumber = Math.floor(1000 + Math.random() * 9000);
-  const newTicket = {
-    id: uuidv4(),
-    ticketNumber,
-    title,
-    description,
-    username,
-    messages: [],
-    createdAt: new Date(),
-    status: 'Open'
+    const { title, description } = req.body;
+    const { username } = req.user;
+  
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required.' });
+    }
+    const ticketNumber = generateTicketNumber();
+  
+    const newTicket = {
+      id: uuidv4(),
+      ticketNumber,
+      title,
+      description,
+      username,
+      messages: [],
+      createdAt: new Date(),
+      status: 'Open'
+    };
+  
+    const tickets = readTicketsFile();
+    tickets.push(newTicket);
+    writeTicketsFile(tickets);
+  
+    res.status(201).json({ message: 'Ticket created successfully!', ticket: newTicket });
+  });
+    const generateTicketNumber = () => {
+    return Math.floor(1000 + Math.random() * 9000);
   };
-
-  const tickets = readTicketsFile();
-  tickets.push(newTicket);
-  writeTicketsFile(tickets);
-
-  res.status(201).json({ message: 'Ticket created successfully!', ticket: newTicket });
-});
+  
 
 router.get('/list', (req, res) => {
   const { username } = req.user; 
