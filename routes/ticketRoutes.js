@@ -3,8 +3,17 @@ const { v4: uuidv4 } = require('uuid');
 const Ticket = require('../models/Ticket');
 const router = express.Router();
 
-const generateTicketNumber = () => {
-  return Math.floor(1000 + Math.random() * 9000);
+const generateTicketNumber = async () => {
+  let ticketNumber;
+  let exists = true;
+
+  while (exists) {
+    ticketNumber = Math.floor(1000 + Math.random() * 9000);
+    const existingTicket = await Ticket.findOne({ ticketNumber });
+    exists = !!existingTicket;
+  }
+
+  return ticketNumber;
 };
 
 router.post('/create', async (req, res) => {
@@ -14,8 +23,8 @@ router.post('/create', async (req, res) => {
   if (!title || !description) {
     return res.status(400).json({ error: 'Title and description are required.' });
   }
-  
-  const ticketNumber = generateTicketNumber();
+
+  const ticketNumber = await generateTicketNumber();
 
   const newTicket = new Ticket({
     ticketNumber,
@@ -77,11 +86,11 @@ router.post('/message', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
+router.get('/:ticketNumber', async (req, res) => {
+  const { ticketNumber } = req.params;
 
   try {
-    const ticket = await Ticket.findById(id);
+    const ticket = await Ticket.findOne({ ticketNumber });
 
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found.' });
@@ -93,8 +102,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/:id/close', async (req, res) => {
-  const { id } = req.params;
+router.post('/:ticketNumber/close', async (req, res) => {
+  const { ticketNumber } = req.params;
   const isAdmin = req.user.role === 'administrator';
 
   if (!isAdmin) {
@@ -102,7 +111,7 @@ router.post('/:id/close', async (req, res) => {
   }
 
   try {
-    const ticket = await Ticket.findById(id);
+    const ticket = await Ticket.findOne({ ticketNumber });
 
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found.' });
