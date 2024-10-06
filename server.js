@@ -13,7 +13,8 @@ const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
 
 const redisClient = createClient({
@@ -40,7 +41,14 @@ app.use(session({
 }));
 
 app.use(bodyParser.json());
-app.use(cors());
+
+const corsOptions = {
+  origin: 'https://support.natemarcellus.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+};
+
+app.use(cors(corsOptions)); 
 
 app.use((req, res, next) => {
   if (req.method === 'POST') {
@@ -88,9 +96,8 @@ const validateToken = (req, res, next) => {
   });
 };
 
-
 app.use('/tickets', validateToken, ticketRoutes);
-app.use('/user', validateToken, userRoutes)
+app.use('/user', validateToken, userRoutes);
 app.use('/sso', loginRoutes);
 app.use('/download', downloadRoutes);
 app.use('/version', versionRoutes);
