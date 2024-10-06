@@ -48,22 +48,11 @@ const generateTicketNumber = () => {
   return Math.floor(1000 + Math.random() * 9000);
 };
 
-router.get('/all', (req, res) => {
-  const tickets = readTicketsFile();
-
-  if (tickets.length === 0) {
-    return res.status(404).json({ message: 'No tickets found.' });
-  }
-
-  res.status(200).json({ tickets });
-});
-
 router.get('/list', (req, res) => {
   const { username } = req.user;
-
   const tickets = readTicketsFile();
-  const userTickets = tickets.filter(ticket => ticket.username === username);
-
+  const isAdmin = req.user.role === 'administrator';
+  const userTickets = isAdmin ? tickets : tickets.filter(ticket => ticket.username === username);
   res.status(200).json({ tickets: userTickets });
 });
 
