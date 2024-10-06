@@ -112,9 +112,8 @@ router.get('/:id', (req, res) => {
 
 router.post('/:id/close', (req, res) => {
   const { id } = req.params;
-  const { role } = req.user.role;
-  
-  if (role !== 'administrator') {
+  const isAdmin = req.user.role === 'administrator';
+  if (!isAdmin) {
     return res.status(403).json({ error: 'Unauthorized. Only administrators can close tickets.' });
   }
 
