@@ -141,8 +141,17 @@ router.post('/register', async (req, res) => {
       console.error('Failed to insert user into database:', email);
       return res.status(500).json({ success: false, message: 'User registration failed' });
     }
+    
     console.log('User registered successfully:', email);
+    
     const [newUser] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
+    console.log('New user object:', newUser[0]);
+
+    if (!newUser[0].id) {
+      console.error('User ID is undefined after registration:', newUser[0]);
+      return res.status(500).json({ success: false, message: 'User ID is undefined' });
+    }
+
     req.logIn(newUser[0], (err) => {
       if (err) {
         console.error('Auto-login error:', err);
