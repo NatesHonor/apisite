@@ -81,7 +81,8 @@ const validateToken = (req, res, next) => {
     req.user = {
       id: decoded.id,
       username: decoded.username,
-      email: decoded.email
+      email: decoded.email,
+      role: decoded.role
     };
 
     next();
