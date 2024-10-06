@@ -70,8 +70,6 @@ const validateToken = (req, res, next) => {
   }
 
   const bearerToken = token.split(' ')[1];
-  console.log('Token received for validation:', bearerToken);
-
   jwt.verify(bearerToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error('Token verification error:', err);
