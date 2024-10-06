@@ -30,24 +30,17 @@
     passwordField: 'password'
   }, async (email, password, done) => {
     try {
-      console.log('Attempting login for:', email);
-
       const [results] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
       if (results.length === 0) {
         console.log('No user found with email:', email);
         return done(null, false, { message: 'Invalid credentials' });
       }
-
       const user = results[0];
-      console.log('User found:', user);
-
       const isValidPassword = bcrypt.compareSync(password, user.password);
       if (!isValidPassword) {
         console.log('Invalid password for user:', email);
         return done(null, false, { message: 'Invalid credentials' });
       }
-
-      console.log('Login successful for:', email);
       return done(null, user);
     } catch (error) {
       console.error('Error during login:', error);
