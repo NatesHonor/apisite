@@ -45,7 +45,7 @@ router.post('/create', (req, res) => {
 });
 
 router.get('/list', (req, res) => {
-  const { username } = req.user;  // Extract username from the token
+  const { username } = req.user; 
 
   const tickets = readTicketsFile();
   const userTickets = tickets.filter(ticket => ticket.username === username);
