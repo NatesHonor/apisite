@@ -6,12 +6,14 @@ const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const path = require('path');
 
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+
 const app = express();
 
 const redisClient = createClient({
@@ -66,18 +68,21 @@ const validateToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
-  console.log('Token received for validation:', token);
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+
+  const bearerToken = token.split(' ')[1];
+  console.log('Token received for validation:', bearerToken);
+
+  jwt.verify(bearerToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error('Token verification error:', err);
       return res.status(403).json({ error: 'Unauthorized: Invalid token' });
     }
+
     req.userId = decoded.id;
     req.userEmail = decoded.email;
     next();
   });
 };
-
 
 app.use('/tickets', validateToken, ticketRoutes);
 
