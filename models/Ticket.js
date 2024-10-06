@@ -18,6 +18,6 @@ const ticketSchema = new mongoose.Schema({
   closedAt: { type: Date }
 });
 
-const Ticket = mongoose.model('Ticket', ticketSchema);
+const Ticket = mongoose.model('Ticket', ticketSchema, 'NatesServicesSupport');
 
 module.exports = Ticket;
