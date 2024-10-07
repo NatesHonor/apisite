@@ -86,28 +86,29 @@ router.post('/message', async (req, res) => {
   }
 });
 
-router.get('/:ticketNumber', async (req, res) => {
-  const { ticketNumber } = req.params;
-  console.log(`Fetching ticket with ticketNumber: ${ticketNumber}`); // Logging
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log(`Fetching ticket with _id: ${id}`);
 
   try {
-    const ticket = await Ticket.findOne({ ticketNumber });
-    console.log(`Ticket found: ${ticket}`); // Log the result
+    const ticket = await Ticket.findById(id);
+    console.log(`Ticket found: ${ticket}`);
 
     if (!ticket) {
-      console.log(`Ticket with number ${ticketNumber} not found.`);
+      console.log(`Ticket with _id ${id} not found.`);
       return res.status(404).json({ error: 'Ticket not found.' });
     }
 
     res.status(200).json({ ticket });
   } catch (error) {
-    console.error(`Error fetching ticket: ${error.message}`); // Log error details
+    console.error(`Error fetching ticket: ${error.message}`);
     res.status(500).json({ error: 'Failed to retrieve ticket.' });
   }
 });
 
-router.post('/:ticketNumber/close', async (req, res) => {
-  const { ticketNumber } = req.params;
+
+router.post('/:id/close', async (req, res) => {
+  const { id } = req.params;
   const isAdmin = req.user.role === 'administrator';
 
   if (!isAdmin) {
@@ -115,8 +116,8 @@ router.post('/:ticketNumber/close', async (req, res) => {
   }
 
   try {
-    const ticket = await Ticket.findOne({ ticketNumber });
-
+    const ticket = await Ticket.findById(id);
+    
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found.' });
     }
