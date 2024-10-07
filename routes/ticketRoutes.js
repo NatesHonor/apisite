@@ -58,6 +58,7 @@ router.get('/list', async (req, res) => {
 router.post('/message', async (req, res) => {
   const { ticketNumber, messageContent } = req.body;
   const { username } = req.user;
+  const { role } = req.user.role;
 
   if (!ticketNumber || !messageContent) {
     return res.status(400).json({ error: 'Ticket number and message content are required.' });
@@ -73,6 +74,7 @@ router.post('/message', async (req, res) => {
     const newMessage = {
       messageId: uuidv4(),
       username,
+      role, 
       messageContent,
       sentAt: new Date()
     };
@@ -85,6 +87,7 @@ router.post('/message', async (req, res) => {
     res.status(500).json({ error: 'Failed to add message.' });
   }
 });
+
 
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
@@ -117,7 +120,7 @@ router.post('/:id/close', async (req, res) => {
 
   try {
     const ticket = await Ticket.findById(id);
-    
+
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found.' });
     }
