@@ -30,7 +30,7 @@ function compareVersions(a, b) {
 router.get('/:appName', async (req, res) => {
   const { appName } = req.params;
 
-  if (appName === 'missionchief') {
+  if (appName === 'missionchiefbot') {
     try {
       const response = await axios.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/tags');
       const tags = response.data;
