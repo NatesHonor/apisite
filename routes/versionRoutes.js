@@ -32,7 +32,11 @@ router.get('/:appName', async (req, res) => {
 
   if (appName === 'missionchiefbot') {
     try {
-      const response = await axios.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/tags');
+      const response = await axios.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/tags', {
+        headers: {
+          Authorization: `token ${process.env.GITHUB_KEY}`,
+        },
+      });
       const tags = response.data;
 
       if (tags.length === 0) {
