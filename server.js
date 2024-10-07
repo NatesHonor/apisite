@@ -63,9 +63,6 @@ app.use((req, res, next) => {
     return next();
   }
 
-  if (req.path === '/version/missionchief') {
-    return next();
-  }
 
   const apiKey = req.headers['x-api-key'];
   
