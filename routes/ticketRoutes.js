@@ -56,16 +56,15 @@ router.get('/list', async (req, res) => {
 });
 
 router.post('/message', async (req, res) => {
-  const { ticketNumber, messageContent } = req.body;
-  const { username } = req.user;
-  const { role } = req.user.role;
+  const { ticketID, messageContent } = req.body;
+  const { username, role } = req.user;
 
-  if (!ticketNumber || !messageContent) {
-    return res.status(400).json({ error: 'Ticket number and message content are required.' });
+  if (!ticketID || !messageContent) {
+    return res.status(400).json({ error: 'Ticket ID and message content are required.' });
   }
 
   try {
-    const ticket = await Ticket.findOne({ ticketNumber });
+    const ticket = await Ticket.findById(ticketID);
 
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found.' });
@@ -88,7 +87,7 @@ router.post('/message', async (req, res) => {
     console.error(`Error fetching ticket: ${error.message}`);
   }
 });
-
+     
 
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
