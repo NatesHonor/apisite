@@ -85,6 +85,7 @@ router.post('/message', async (req, res) => {
     res.status(200).json({ message: 'Message added successfully!', ticket });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add message.' });
+    console.error(`Error fetching ticket: ${error.message}`);
   }
 });
 
