@@ -8,8 +8,8 @@ const ticketSchema = new mongoose.Schema({
   messages: [
     {
       messageId: { type: String, required: true },
-      role: { type: String, required: true },
       username: { type: String, required: true },
+      role: { type: String, required: true },
       messageContent: { type: String, required: true },
       sentAt: { type: Date, default: Date.now }
     }
