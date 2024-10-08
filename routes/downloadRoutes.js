@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const router = express.Router();
-const downloadInfoPath = path.join(__dirname, '../files/downloadInfo.json');
+const downloadInfoPath = path.join(__dirname, './files/downloadInfo.json');
 
 const loadDownloadInfo = () => {
   if (fs.existsSync(downloadInfoPath)) {
@@ -52,7 +52,7 @@ initializeDownloadInfo();
 
 router.get('/:application/:version', (req, res) => {
   const { application, version } = req.params;
-  const filePath = path.join(__dirname, '../files/', application, version, `${version}.zip`);
+  const filePath = path.join(__dirname, '../files/applications', application, version, `${version}.zip`);
 
   const downloadInfo = loadDownloadInfo();
 
