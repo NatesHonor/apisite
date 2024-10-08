@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const router = express.Router();
-const downloadInfoPath = path.join(__dirname, './files/downloadInfo.json');
+const downloadInfoPath = path.join(__dirname, '../files/downloadInfo.json');
 
 const loadDownloadInfo = () => {
   if (fs.existsSync(downloadInfoPath)) {
@@ -70,18 +70,21 @@ router.get('/:application/:version', (req, res) => {
     }
   };
 
-  if (fs.existsSync(filePath)) {
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.log(`404 Error: File not found at ${filePath}`);
+      return res.status(404).json({ success: false, message: 'File not found' });
+    }
+
     res.download(filePath, (err) => {
       if (err) {
         console.error('Error downloading file:', err);
-        res.status(500).json({ success: false, message: 'File not found or server error' });
+        return res.status(500).json({ success: false, message: 'File not found or server error' });
       } else {
         incrementDownloadCount(`${application}/${fileName}`);
       }
     });
-  } else {
-    res.status(404).json({ success: false, message: 'File not found' });
-  }
+  });
 });
 
 router.get('/info/:application', (req, res) => {
