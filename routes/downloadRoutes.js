@@ -52,7 +52,14 @@ initializeDownloadInfo();
 
 router.get('/:application/:version', (req, res) => {
   const { application, version } = req.params;
-  const filePath = path.join(__dirname, '../files/applications', application, version, `${version}.zip`);
+  let fileName;
+  if (version === 'latest') {
+    fileName = 'latest.zip';
+  } else {
+    fileName = `${version}.zip`;
+  }
+
+  const filePath = path.join(__dirname, '../files/applications', application, fileName);
 
   const downloadInfo = loadDownloadInfo();
 
@@ -69,7 +76,7 @@ router.get('/:application/:version', (req, res) => {
         console.error('Error downloading file:', err);
         res.status(500).json({ success: false, message: 'File not found or server error' });
       } else {
-        incrementDownloadCount(`${application}/${version}.zip`);
+        incrementDownloadCount(`${application}/${fileName}`);
       }
     });
   } else {
