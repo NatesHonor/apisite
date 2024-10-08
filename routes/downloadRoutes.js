@@ -23,19 +23,25 @@ const saveDownloadInfo = (info) => {
 };
 
 const initializeDownloadInfo = () => {
-  const filesDir = path.join(__dirname, '../files/applications/');
-  const files = fs.readdirSync(filesDir);
+  const applicationsDir = path.join(__dirname, '../files/');
+  const applications = fs.readdirSync(applicationsDir);
   const downloadInfo = loadDownloadInfo();
 
-  files.forEach((file) => {
-    const filePath = path.join(filesDir, file);
-    const stats = fs.statSync(filePath);
-    if (!downloadInfo[file]) {
-      downloadInfo[file] = {
-        name: file,
-        size: stats.size,
-        downloads: 0,
-      };
+  applications.forEach((application) => {
+    const appDir = path.join(applicationsDir, application);
+    if (fs.statSync(appDir).isDirectory()) {
+      const versions = fs.readdirSync(appDir);
+      versions.forEach((version) => {
+        const filePath = path.join(appDir, version);
+        const stats = fs.statSync(filePath);
+        if (!downloadInfo[`${application}/${version}`]) {
+          downloadInfo[`${application}/${version}`] = {
+            name: version,
+            size: stats.size,
+            downloads: 0,
+          };
+        }
+      });
     }
   });
 
@@ -44,11 +50,9 @@ const initializeDownloadInfo = () => {
 
 initializeDownloadInfo();
 
-router.get('/:filename', (req, res) => {
-  const { filename } = req.params;
-  const filePathWithExtension = path.join(__dirname, '../files/applications/', filename);
-  const filePathWithoutExtensionExe = path.join(__dirname, '../files/applications/', `${filename}.exe`);
-  const filePathWithoutZip = path.join(__dirname, '../files/applications/', `${filename}.zip`);
+router.get('/:application/:version', (req, res) => {
+  const { application, version } = req.params;
+  const filePath = path.join(__dirname, '../files/', application, version, `${version}.zip`);
 
   const downloadInfo = loadDownloadInfo();
 
@@ -59,31 +63,13 @@ router.get('/:filename', (req, res) => {
     }
   };
 
-  if (fs.existsSync(filePathWithExtension)) {
-    res.download(filePathWithExtension, (err) => {
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, (err) => {
       if (err) {
         console.error('Error downloading file:', err);
         res.status(500).json({ success: false, message: 'File not found or server error' });
       } else {
-        incrementDownloadCount(filename);
-      }
-    });
-  } else if (fs.existsSync(filePathWithoutZip)) {
-    res.download(filePathWithoutZip, (err) => {
-      if (err) {
-        console.error('Error downloading file:', err);
-        res.status(500).json({ success: false, message: 'File not found or server error' });
-      } else {
-        incrementDownloadCount(`${filename}.zip`);
-      }
-    });
-  } else if (fs.existsSync(filePathWithoutExtensionExe)) {
-    res.download(filePathWithoutExtensionExe, (err) => {
-      if (err) {
-        console.error('Error downloading file:', err);
-        res.status(500).json({ success: false, message: 'File not found or server error' });
-      } else {
-        incrementDownloadCount(`${filename}.exe`);
+        incrementDownloadCount(`${application}/${version}.zip`);
       }
     });
   } else {
@@ -91,14 +77,14 @@ router.get('/:filename', (req, res) => {
   }
 });
 
-router.get('/info/:filename', (req, res) => {
-  const { filename } = req.params;
+router.get('/info/:application', (req, res) => {
+  const { application } = req.params;
   const downloadInfo = loadDownloadInfo();
 
-  const fileInfo = downloadInfo[filename] || downloadInfo[`${filename}.zip`] || downloadInfo[`${filename}.exe`];
+  const fileInfo = Object.keys(downloadInfo).find(file => file.startsWith(application));
 
   if (fileInfo) {
-    res.json(fileInfo);
+    res.json(downloadInfo[fileInfo]);
   } else {
     res.status(404).json({ success: false, message: 'File not found' });
   }
