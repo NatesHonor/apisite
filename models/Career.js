@@ -9,7 +9,6 @@ const careerSchema = new mongoose.Schema({
   shortDescription: { type: String, required: true },
   requirements: { type: String, required: true },
   responsibilities: { type: String, required: true },
-  customQuestions: [{ type: String }],
   salary: { type: String, required: true },
   company: { type: String, required: true },
   tags: [{ type: String }],

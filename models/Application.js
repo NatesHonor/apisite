@@ -7,7 +7,6 @@ const applicationSchema = new mongoose.Schema({
   availability: { type: String, required: true },
   coverLetter: { type: String, required: true },
   resume: { type: String, required: true },
-  answers: [{ question: String, answer: String }]
 });
 
 const Application = mongoose.model('Application', applicationSchema);
