@@ -5,7 +5,7 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit'); // Import express-rate-limit
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const path = require('path');
 
