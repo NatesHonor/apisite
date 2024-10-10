@@ -5,6 +5,7 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit'); // Import express-rate-limit
 require('dotenv').config();
 const path = require('path');
 
@@ -40,6 +41,16 @@ redisClient.on('error', (err) => {
 
 redisClient.connect().catch(console.error);
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+
 app.use(session({
   store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET,
@@ -64,13 +75,12 @@ app.use((req, res, next) => {
     return next();
   }
 
-
   const apiKey = req.headers['x-api-key'];
-  
+
   if (apiKey !== process.env.API_KEY) {
     return res.status(403).json({ error: 'Forbidden: Invalid API key' });
   }
-  
+
   next();
 });
 
