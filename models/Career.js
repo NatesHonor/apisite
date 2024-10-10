@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const careerSchema = new mongoose.Schema({
-  jobID: { type: String, required: true, unique: true },
-  remote: { type: Boolean, default: false },
+  jobID: { type: Number, required: true, unique: true },
+  remote: { type: Boolean, default: true },
   jobTitle: { type: String, required: true },
   postingDate: { type: Date, default: Date.now },
   shortDescription: { type: String, required: true },
