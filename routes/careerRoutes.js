@@ -2,8 +2,8 @@ const express = require('express');
 const Career = require('../models/Career');
 const Application = require('../models/Application');
 const validateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-
+const jwt = require('jsonwebtoken');
+const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No token provided or invalid format' });
   }
