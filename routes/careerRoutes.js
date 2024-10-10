@@ -15,15 +15,21 @@ router.get('/list', async (req, res) => {
 });
 
 router.post('/post', async (req, res) => {
-  try {
-    const newCareer = new Career(req.body);
-    await newCareer.save();
-    res.status(201).json(newCareer);
-  } catch (error) {
-    console.error('Error posting new career:', error);
-    res.status(400).json({ error: 'Failed to post new career' });
-  }
-});
+    try {
+      const jobID = Math.floor(Math.random() * 9000000) + 1000000;
+  
+      const newCareer = new Career({
+        ...req.body,
+        jobID: jobID.toString()
+      });
+      await newCareer.save();
+      res.status(201).json(newCareer);
+    } catch (error) {
+      console.error('Error posting new career:', error);
+      res.status(400).json({ error: 'Failed to post new career' });
+    }
+  });
+  
 
 
 router.post('/apply', async (req, res) => {
