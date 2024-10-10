@@ -8,6 +8,7 @@ const careerSchema = new mongoose.Schema({
   postingDate: { type: Date, default: Date.now },
   shortDescription: { type: String, required: true },
   requirements: { type: String, required: true },
+  responsibilities: { type: String, required: true },
   customQuestions: [{ type: String }],
   salary: { type: String, required: true },
   company: { type: String, required: true },
