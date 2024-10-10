@@ -13,7 +13,8 @@ const careerSchema = new mongoose.Schema({
   company: { type: String, required: true },
   tags: [{ type: String }],
   category: { type: String, required: true },
-  type: { type: String, required: true}
+  type: { type: String, required: true},
+  benefits: { type: String, required: true}
 });
 
 
