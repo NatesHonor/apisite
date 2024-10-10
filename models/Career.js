@@ -9,7 +9,8 @@ const careerSchema = new mongoose.Schema({
   requirements: { type: String, required: true },
   customQuestions: [{ type: String }],
   company: { type: String, required: true },
-  tags: [{ type: String }]
+  tags: [{ type: String }],
+  category: { type: String, required: true } 
 });
 
 const Career = mongoose.model('Career', careerSchema);
