@@ -11,9 +11,10 @@ const path = require('path');
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
-const fakenetworkRoutes = require('./routes/fakenetworkRoutes');
+const fakenetworkRoutes = require('./routes/fakenetwork/fakenetworkRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const userRoutes = require('./routes/userRoutes');
+const careerRoutes = require('./routes/careerRoutes');
 
 const app = express();
 const mongoose = require('mongoose');
@@ -99,14 +100,14 @@ const validateToken = (req, res, next) => {
   });
 };
 
-app.use('/tickets', validateToken, ticketRoutes);
-app.use('/user', validateToken, userRoutes);
 app.use('/sso', loginRoutes);
-app.use('/download', downloadRoutes);
-app.use('/version', versionRoutes);
-app.use('/fakenetwork', fakenetworkRoutes);
 app.use(express.static('public'));
-
+app.use('/careers', careerRoutes);
+app.use('/version', versionRoutes);
+app.use('/download', downloadRoutes);
+app.use('/fakenetwork', fakenetworkRoutes);
+app.use('/user', validateToken, userRoutes);
+app.use('/tickets', validateToken, ticketRoutes);
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
