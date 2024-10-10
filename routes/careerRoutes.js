@@ -1,6 +1,31 @@
 const express = require('express');
 const Career = require('../models/Career');
 const Application = require('../models/Application');
+const validateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided or invalid format' });
+  }
+
+  const bearerToken = authHeader.split(' ')[1];
+
+  jwt.verify(bearerToken, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error('Token verification error:', err);
+      return res.status(403).json({ error: 'Unauthorized: Invalid token' });
+    }
+
+    req.user = {
+      id: decoded.id,
+      username: decoded.username,
+      email: decoded.email,
+      role: decoded.role
+    };
+
+    next();
+  });
+};
 
 const router = express.Router();
 
@@ -30,24 +55,21 @@ router.get('/details/:jobID', async (req, res) => {
   }
 });
 
+router.post('/post', validateToken, async (req, res) => {
+  try {
+    const jobID = Math.floor(Math.random() * 9000000) + 1000000;
 
-router.post('/post', async (req, res) => {
-    try {
-      const jobID = Math.floor(Math.random() * 9000000) + 1000000;
-  
-      const newCareer = new Career({
-        ...req.body,
-        jobID: jobID.toString()
-      });
-      await newCareer.save();
-      res.status(201).json(newCareer);
-    } catch (error) {
-      console.error('Error posting new career:', error);
-      res.status(400).json({ error: 'Failed to post new career' });
-    }
-  });
-  
-
+    const newCareer = new Career({
+      ...req.body,
+      jobID: jobID.toString()
+    });
+    await newCareer.save();
+    res.status(201).json(newCareer);
+  } catch (error) {
+    console.error('Error posting new career:', error);
+    res.status(400).json({ error: 'Failed to post new career' });
+  }
+});
 
 router.post('/apply', async (req, res) => {
   try {
