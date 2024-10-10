@@ -14,6 +14,23 @@ router.get('/list', async (req, res) => {
   }
 });
 
+router.get('/details/:jobID', async (req, res) => {
+  try {
+    const { jobID } = req.params;
+    const job = await Career.findOne({ jobID });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json(job);
+  } catch (error) {
+    console.error('Error fetching job details:', error);
+    res.status(500).json({ error: 'Failed to fetch job details' });
+  }
+});
+
+
 router.post('/post', async (req, res) => {
     try {
       const jobID = Math.floor(Math.random() * 9000000) + 1000000;
