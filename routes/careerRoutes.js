@@ -1,9 +1,17 @@
 const express = require('express');
+const multer = require('multer');
 const Career = require('../models/Career');
 const Application = require('../models/Application');
-const validateToken = (req, res, next) => {
 const jwt = require('jsonwebtoken');
-const authHeader = req.headers['authorization'];
+const axios = require('axios');
+const fs = require('fs');
+const FormData = require('form-data');
+const path = require('path');
+
+const upload = multer({ dest: 'uploads/' });
+
+const validateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No token provided or invalid format' });
   }
@@ -71,11 +79,30 @@ router.post('/post', validateToken, async (req, res) => {
   }
 });
 
-router.post('/apply', async (req, res) => {
+router.post('/apply', upload.single('resume'), async (req, res) => {
   try {
     const application = new Application(req.body);
     await application.save();
-    res.status(201).json(application);
+
+    const resumePath = req.file.path;
+    const form = new FormData();
+    form.append('file', fs.createReadStream(resumePath));
+
+    const driveUrl = `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
+
+    const metadata = {
+      name: req.file.originalname,
+      mimeType: req.file.mimetype,
+    };
+    const response = await axios.post(driveUrl, form, {
+      headers: {
+        ...form.getHeaders(),
+        'Content-Type': `multipart/related; boundary=${form._boundary}`,
+      },
+    });
+    fs.unlinkSync(resumePath);
+
+    res.status(201).json({ application, driveFileId: response.data.id });
   } catch (error) {
     console.error('Error submitting application:', error);
     res.status(400).json({ error: 'Failed to submit application' });
