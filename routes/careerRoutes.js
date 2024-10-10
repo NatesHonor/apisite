@@ -14,7 +14,6 @@ router.get('/list', async (req, res) => {
   }
 });
 
-// Route to post a new career
 router.post('/post', async (req, res) => {
   try {
     const newCareer = new Career(req.body);
@@ -26,7 +25,7 @@ router.post('/post', async (req, res) => {
   }
 });
 
-// Route to apply for a job
+
 router.post('/apply', async (req, res) => {
   try {
     const application = new Application(req.body);
