@@ -13,9 +13,9 @@ const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
 const fakenetworkRoutes = require('./routes/fakenetwork/fakenetworkRoutes');
-const ticketRoutes = require('./routes/ticketRoutes');
-const userRoutes = require('./routes/userRoutes');
-const careerRoutes = require('./routes/careerRoutes');
+const ticketRoutes = require('../api.natemarcellus.com/routes/ticketRoutes');
+const userRoutes = require('../api.natemarcellus.com/routes/userRoutes');
+const careerRoutes = require('../api.natemarcellus.com/routes/careerRoutes');
 
 const app = express();
 const mongoose = require('mongoose');
