@@ -12,9 +12,9 @@ const path = require('path');
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
 const versionRoutes = require('./routes/versionRoutes');
-const ticketRoutes = require('../routes/ticketRoutes');
-const userRoutes = require('../routes/userRoutes');
-const careerRoutes = require('../routes/careerRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
+const userRoutes = require('./routes/userRoutes');
+const careerRoutes = require('./routes/careerRoutes');
 
 const app = express();
 const mongoose = require('mongoose');
