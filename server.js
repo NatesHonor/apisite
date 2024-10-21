@@ -114,7 +114,6 @@ app.use(express.static('public'));
 app.use('/careers', careerRoutes);
 app.use('/version', versionRoutes);
 app.use('/download', downloadRoutes);
-app.use('/fakenetwork', fakenetworkRoutes);
 app.use('/user', validateToken, userRoutes);
 app.use('/tickets', validateToken, ticketRoutes);
 app.get('/', (req, res) => {
