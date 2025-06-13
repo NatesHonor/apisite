@@ -50,7 +50,7 @@ app.use(session({
 
 app.use(bodyParser.json());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://files.natemarcellus.com',
   credentials: true
 }));
 
