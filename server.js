@@ -8,6 +8,9 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs');
+const mongoose = require('mongoose');
+const redisClient = require('./utils/redisClient');
 
 const loginRoutes = require('./routes/loginRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
@@ -16,29 +19,16 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const userRoutes = require('./routes/userRoutes');
 const careerRoutes = require('./routes/careerRoutes');
 
+
 const app = express();
-const mongoose = require('mongoose');
 
 const mongoURI = process.env.MONGO_URI;
 const mongoOptions = {};
 
 mongoose.connect(mongoURI, mongoOptions)
+  .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL,
-  legacyMode: false
-});
-
-redisClient.on('connect', () => {
-  console.log('Connected to Redis successfully');
-});
-
-redisClient.on('error', (err) => {
-  console.error('Redis error:', err);
-});
-
-redisClient.connect().catch(console.error);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -55,11 +45,14 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  cookie: { secure: false },
 }));
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 
 app.use((req, res, next) => {
   if (req.method === 'POST') {
@@ -108,6 +101,36 @@ const validateToken = (req, res, next) => {
     next();
   });
 };
+
+
+const initializeDownloadSchema = async () => {
+  const applicationsDir = path.join(__dirname, 'files/applications');
+  if (!fs.existsSync(applicationsDir)) {
+    return console.warn(`⚠️ Directory not found: ${applicationsDir}`);
+  }
+
+  const applications = fs.readdirSync(applicationsDir);
+  for (const appName of applications) {
+    const appPath = path.join(applicationsDir, appName);
+    if (fs.statSync(appPath).isDirectory()) {
+      const redisKey = `downloads:${appName}`;
+
+      try {
+        const exists = await redisClient.exists(redisKey);
+        if (!exists) {
+          await redisClient.set(redisKey, 0);
+          console.log(`✅ Added download record for ${appName}`);
+        } else {
+          console.log(`ℹ️ Record already exists for ${appName}`);
+        }
+      } catch (err) {
+        console.error(`❌ Error processing ${appName}:`, err);
+      }
+    }
+  }
+};
+
+initializeDownloadSchema().catch(console.error);
 
 app.use('/sso', loginRoutes);
 app.use(express.static('public'));
