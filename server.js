@@ -128,7 +128,7 @@ initializeDownloadSchema().catch(console.error);
 app.use('/sso', loginRoutes);
 app.use(express.static('public'));
 app.use('/careers', validateToken, careerRoutes);
-app.use('/version', validateInternal, versionRoutes);
+app.use('/version', versionRoutes);
 app.use('/download', downloadRoutes);
 app.use('/user', validateToken, userRoutes);
 app.use('/tickets', validateToken, ticketRoutes);
