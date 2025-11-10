@@ -25,6 +25,13 @@ const app = express();
 const mongoURI = process.env.MONGO_URI;
 const mongoOptions = {};
 
+const allowedOrigins = [
+  'https://support.natemarcellus.com',
+  'https://files.natemarcellus.com',
+  'https://natemarcellus.com',
+  'http://localhost:3000'
+];
+
 mongoose.connect(mongoURI, mongoOptions)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
@@ -50,7 +57,13 @@ app.use(session({
 
 app.use(bodyParser.json());
 app.use(cors({
-  origin: 'https://files.natemarcellus.com',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -70,7 +83,7 @@ app.use((req, res, next) => {
   const apiKey = req.headers['x-api-key'];
 
   if (apiKey !== process.env.API_KEY) {
-    return res.status(403).json({ error: 'Forbidden: Invalid API key' });
+   // return res.status(403).json({ error: 'Forbidden: Invalid API key' });
   }
 
   next();

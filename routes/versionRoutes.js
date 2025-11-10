@@ -46,7 +46,36 @@ router.get('/:appName', async (req, res) => {
       const versionNumbers = tags.map(tag => tag.name.replace('v', ''));
       const betaVersions = versionNumbers.filter(version => version.includes('-BETA'));
       const stableVersions = versionNumbers.filter(version => !version.includes('-BETA'));
+      const oldVersion = stableVersions.filter(version => !version.includes('x'))
+      oldVersion.sort(compareVersions);
+      const latestVersion = oldVersion.pop() || null;
 
+      return res.json({
+        latest: latestVersion,
+        versions: oldVersion.reverse(),
+        beta: betaVersions,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to fetch versions from GitHub' });
+    }
+  } else if (appName === 'missionchiefbotx') {
+    try {
+      const response = await axios.get('https://api.github.com/repos/NatesHonor/MissionchiefBot/tags', {
+        headers: {
+          Authorization: `token ${process.env.GITHUB_KEY}`,
+        },
+      });
+      const tags = response.data;
+
+      if (tags.length === 0) {
+        return res.status(404).json({ error: 'No versions found' });
+      }
+
+      const versionNumbers = tags.map(tag => tag.name.replace('v', ''));
+      const xversionNumbers = versionNumbers.filter(version => version.includes('x'))
+      const betaVersions = xversionNumbers.filter(version => version.includes('-BETA'));
+      const stableVersions = xversionNumbers.filter(version => !version.includes('-BETA'));
       stableVersions.sort(compareVersions);
       const latestVersion = stableVersions.pop() || null;
 
