@@ -10,6 +10,7 @@ require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const redisClient = require('./utils/redisClient');
 
 const loginRoutes = require('./routes/loginRoutes');
@@ -18,7 +19,6 @@ const versionRoutes = require('./routes/versionRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const userRoutes = require('./routes/userRoutes');
 const careerRoutes = require('./routes/careerRoutes');
-
 
 const app = express();
 
@@ -36,9 +36,8 @@ mongoose.connect(mongoURI, mongoOptions)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
@@ -46,7 +45,8 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-
+app.use(cookieParser());
+app.use(bodyParser.json());
 app.use(session({
   store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET,
@@ -54,8 +54,6 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false },
 }));
-
-app.use(bodyParser.json());
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -68,76 +66,46 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-  if (req.method === 'POST') {
-    console.log(`Received POST request to ${req.url}`);
-    console.log('Request data:', req.body);
-  }
-  next();
-});
-
-app.use((req, res, next) => {
-  if (req.path === '/') {
-    return next();
-  }
-
-  const apiKey = req.headers['x-api-key'];
-
-  if (apiKey !== process.env.API_KEY) {
-   // return res.status(403).json({ error: 'Forbidden: Invalid API key' });
-  }
-
+  if (req.method === 'POST') console.log(`POST ${req.url}`, req.body);
   next();
 });
 
 const validateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided or invalid format' });
-  }
-
-  const bearerToken = authHeader.split(' ')[1];
-
-  jwt.verify(bearerToken, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.error('Token verification error:', err);
-      return res.status(403).json({ error: 'Unauthorized: Invalid token' });
-    }
-
-    req.user = {
-      id: decoded.id,
-      username: decoded.username,
-      email: decoded.email,
-      role: decoded.role
-    };
-
+  const token = req.cookies.auth || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Unauthorized' });
+    req.user = decoded;
     next();
   });
 };
 
+const validateInternal = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: 'Missing token' });
+  const token = auth.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.INTERNAL_SECRET);
+    if (decoded.service !== 'bot') throw new Error();
+    next();
+  } catch {
+    res.status(403).json({ error: 'Unauthorized' });
+  }
+};
 
 const initializeDownloadSchema = async () => {
   const applicationsDir = path.join(__dirname, 'files/applications');
-  if (!fs.existsSync(applicationsDir)) {
-    return console.warn(`⚠️ Directory not found: ${applicationsDir}`);
-  }
-
+  if (!fs.existsSync(applicationsDir)) return;
   const applications = fs.readdirSync(applicationsDir);
   for (const appName of applications) {
     const appPath = path.join(applicationsDir, appName);
     if (fs.statSync(appPath).isDirectory()) {
       const redisKey = `downloads:${appName}`;
-
       try {
         const exists = await redisClient.exists(redisKey);
-        if (!exists) {
-          await redisClient.set(redisKey, 0);
-          console.log(`✅ Added download record for ${appName}`);
-        } else {
-          console.log(`ℹ️ Record already exists for ${appName}`);
-        }
+        if (!exists) await redisClient.set(redisKey, 0);
       } catch (err) {
-        console.error(`❌ Error processing ${appName}:`, err);
+        console.error(err);
       }
     }
   }
@@ -147,9 +115,9 @@ initializeDownloadSchema().catch(console.error);
 
 app.use('/sso', loginRoutes);
 app.use(express.static('public'));
-app.use('/careers', careerRoutes);
-app.use('/version', versionRoutes);
-app.use('/download', downloadRoutes);
+app.use('/careers', validateToken, careerRoutes);
+app.use('/version', validateInternal, versionRoutes);
+app.use('/download', validateToken, downloadRoutes);
 app.use('/user', validateToken, userRoutes);
 app.use('/tickets', validateToken, ticketRoutes);
 app.get('/', (req, res) => {

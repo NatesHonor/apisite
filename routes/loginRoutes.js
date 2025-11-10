@@ -7,13 +7,9 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET;
 require('dotenv').config();
 
-const customSerializer = {
-  stringify: (obj) => JSON.stringify(obj),
-  parse: (str) => JSON.parse(str)
-};
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
@@ -31,14 +27,10 @@ passport.use(new LocalStrategy({
 }, async (email, password, done) => {
   try {
     const [results] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
-    if (results.length === 0) {
-      return done(null, false, { message: 'Invalid credentials' });
-    }
+    if (results.length === 0) return done(null, false, { message: 'Invalid credentials' });
     const user = results[0];
     const isValidPassword = bcrypt.compareSync(password, user.password);
-    if (!isValidPassword) {
-      return done(null, false, { message: 'Invalid credentials' });
-    }
+    if (!isValidPassword) return done(null, false, { message: 'Invalid credentials' });
     return done(null, user);
   } catch (error) {
     console.error('Error during login:', error);
@@ -47,19 +39,14 @@ passport.use(new LocalStrategy({
 }));
 
 passport.serializeUser((user, done) => {
-  if (user && user.userid) {
-    done(null, user.userid);
-  } else {
-    done(new Error('User serialization failed: User ID is undefined'));
-  }
+  if (user && user.userid) done(null, user.userid);
+  else done(new Error('User serialization failed'));
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
     const [results] = await pool.query('SELECT * FROM account_data WHERE id = ?', [id]);
-    if (results.length === 0) {
-      return done(null, false);
-    }
+    if (results.length === 0) return done(null, false);
     return done(null, results[0]);
   } catch (error) {
     return done(error);
@@ -67,10 +54,7 @@ passport.deserializeUser(async (id, done) => {
 });
 
 router.use(session({
-  store: new RedisStore({
-    client: redisClient,
-    serializer: customSerializer
-  }),
+  store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -79,33 +63,24 @@ router.use(session({
 
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      console.error('Authentication error:', err);
-      return next(err);
-    }
-    if (!user) {
-      console.log('Authentication failed:', info.message);
-      return res.status(401).json({ success: false, message: info.message });
-    }
+    if (err) return next(err);
+    if (!user) return res.status(401).json({ success: false, message: info.message });
     req.logIn(user, (err) => {
-      if (err) {
-        console.error('Login error:', err);
-        return next(err);
-      }
+      if (err) return next(err);
       const token = jwt.sign(
-        { 
-          id: user.userid, 
-          email: user.email, 
-          username: user.username, 
-          role: user.role 
-        }, 
-        JWT_SECRET, 
-        { expiresIn: '7d' }
+        { id: user.userid, email: user.email, username: user.username, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '30m' }
       );
+      res.cookie('auth', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 30 * 60 * 1000
+      });
       return res.json({
         success: true,
         message: 'Login successful',
-        token,
         user: {
           id: user.userid,
           email: user.email,
@@ -117,13 +92,18 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth');
+  req.logout(() => {
+    res.json({ success: true, message: 'Logged out' });
+  });
+});
+
 router.post('/register', async (req, res) => {
   const { email, username, password } = req.body;
   try {
     const [results] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
-    if (results.length > 0) {
-      return res.json({ success: false, message: 'User already exists' });
-    }
+    if (results.length > 0) return res.json({ success: false, message: 'User already exists' });
     const hashedPassword = bcrypt.hashSync(password, 10);
     await pool.query('INSERT INTO account_data (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword]);
     const [newUser] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
