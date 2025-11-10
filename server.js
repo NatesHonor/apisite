@@ -28,7 +28,7 @@ const mongoOptions = {};
 const allowedOrigins = [
   'https://support.natemarcellus.com',
   'https://files.natemarcellus.com',
-  'https://natemarcellus.com',
+  'https://www.natemarcellus.com',
   'http://localhost:3000'
 ];
 
