@@ -19,6 +19,7 @@ const versionRoutes = require('./routes/versionRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const userRoutes = require('./routes/userRoutes');
 const careerRoutes = require('./routes/careerRoutes');
+const updateRoutes = require('./routes/updateRoutes');
 
 const app = express();
 
@@ -132,6 +133,7 @@ app.use('/version', versionRoutes);
 app.use('/download', downloadRoutes);
 app.use('/user', validateToken, userRoutes);
 app.use('/tickets', validateToken, ticketRoutes);
+app.use('/updates', updateRoutes);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
