@@ -77,22 +77,22 @@ router.get("/auth/browser-safe-client-token", async (req, res) => {
 
 router.post("/checkout/orders/create", async (req, res) => {
   try {
-    console.log("POST /checkout/orders/create called with payload:", req.body);
+    console.log("POST /checkout/orders/create called");
     const accessToken = await getAccessToken();
-    const payload =
-      req.body && Object.keys(req.body).length
-        ? req.body
-        : {
-            intent: "CAPTURE",
-            purchase_units: [
-              {
-                amount: {
-                  currency_code: "USD",
-                  value: "1.00",
-                },
-              },
-            ],
-          };
+    const cart = req.session.cart || [];
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    const payload = {
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "USD",
+            value: subtotal.toFixed(2),
+          },
+        },
+      ],
+    };
 
     console.log("Sending order create request to PayPal with payload:", payload);
 
@@ -113,6 +113,7 @@ router.post("/checkout/orders/create", async (req, res) => {
     res.status(500).json({ error: "order_create_failed" });
   }
 });
+
 
 router.post("/checkout/orders/:orderId/capture", async (req, res) => {
   try {
