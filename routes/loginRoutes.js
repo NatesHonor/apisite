@@ -7,6 +7,7 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -21,6 +22,16 @@ redisClient.connect().catch(console.error);
 
 const router = express.Router();
 
+const transporter = nodemailer.createTransport({
+  host: 'smtp.zoho.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.ZOHO_USER,
+    pass: process.env.ZOHO_PASS
+  }
+});
+
 passport.use(new LocalStrategy({
   usernameField: 'email',
   passwordField: 'password'
@@ -31,6 +42,9 @@ passport.use(new LocalStrategy({
     const user = results[0];
     const isValidPassword = bcrypt.compareSync(password, user.password);
     if (!isValidPassword) return done(null, false, { message: 'Invalid credentials' });
+    if (!user.verified || user.verified === 'false') {
+      return done(null, false, { message: 'Email needs to be verified' });
+    }
     return done(null, user);
   } catch (error) {
     console.error('Error during login:', error);
@@ -64,7 +78,16 @@ router.use(session({
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
-    if (!user) return res.status(401).json({ success: false, message: info.message });
+    if (!user) {
+      if (info.message === 'Email needs to be verified') {
+        return res.status(401).json({
+          success: false,
+          message: info.message,
+          resend: true
+        });
+      }
+      return res.status(401).json({ success: false, message: info.message });
+    }
     req.logIn(user, (err) => {
       if (err) return next(err);
       const token = jwt.sign(
@@ -104,12 +127,29 @@ router.post('/register', async (req, res) => {
   try {
     const [results] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
     if (results.length > 0) return res.json({ success: false, message: 'User already exists' });
+
     const hashedPassword = bcrypt.hashSync(password, 10);
-    await pool.query('INSERT INTO account_data (email, username, password) VALUES (?, ?, ?)', [email, username, hashedPassword]);
+    const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
+    const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
+
+    try {
+      await transporter.sendMail({
+        from: process.env.ZOHO_USER,
+        to: email,
+        subject: 'Verify your email',
+        text: `Click here to verify your account: ${verificationLink}`
+      });
+    } catch (err) {
+      console.error('Email send failed:', err);
+      return res.status(500).json({ success: false, message: 'Email failed, registration aborted.' });
+    }
+
+    await pool.query('INSERT INTO account_data (email, username, password, verified) VALUES (?, ?, ?, ?)', [email, username, hashedPassword, false]);
     const [newUser] = await pool.query('SELECT * FROM account_data WHERE email = ?', [email]);
+
     return res.json({
       success: true,
-      message: 'Registration successful',
+      message: 'Registration successful. Verification email sent.',
       user: {
         id: newUser[0].id,
         email: newUser[0].email,
