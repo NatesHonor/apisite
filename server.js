@@ -12,14 +12,19 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const redisClient = require('./utils/redisClient');
+const createTables = require('./utils/createTables');
 
-const loginRoutes = require('./routes/loginRoutes');
-const downloadRoutes = require('./routes/downloadRoutes');
-const versionRoutes = require('./routes/versionRoutes');
-const ticketRoutes = require('./routes/ticketRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 const userRoutes = require('./routes/userRoutes');
+const emailRoutes = require('./routes/emailRoutes');
+const loginRoutes = require('./routes/loginRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 const careerRoutes = require('./routes/careerRoutes');
 const updateRoutes = require('./routes/updateRoutes');
+const paypalRoutes = require('./routes/paypalRoutes');
+const versionRoutes = require('./routes/versionRoutes');
+const downloadRoutes = require('./routes/downloadRoutes');
+
 
 const app = express();
 
@@ -27,6 +32,7 @@ const mongoURI = process.env.MONGO_URI;
 const mongoOptions = {};
 
 const allowedOrigins = [
+  'https://unendangered-mia-graceful.ngrok-free.dev',
   'https://support.natemarcellus.com',
   'https://files.natemarcellus.com',
   'https://www.natemarcellus.com',
@@ -37,6 +43,10 @@ mongoose.connect(mongoURI, mongoOptions)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+(async () => {
+  await createTables();
+})();
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -44,6 +54,8 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+
 
 app.use(limiter);
 
@@ -78,10 +90,7 @@ app.use(session({
   cookie: { secure: false, httpOnly: true, sameSite: 'lax' },
 }));
 
-app.use((req, res, next) => {
-  if (req.method === 'POST') console.log(`POST ${req.url}`, req.body);
-  next();
-});
+
 
 const validateToken = (req, res, next) => {
   const token = req.cookies.auth || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
@@ -93,18 +102,6 @@ const validateToken = (req, res, next) => {
   });
 };
 
-const validateInternal = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth) return res.status(401).json({ error: 'Missing token' });
-  const token = auth.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.INTERNAL_SECRET);
-    if (decoded.service !== 'bot') throw new Error();
-    next();
-  } catch {
-    res.status(403).json({ error: 'Unauthorized' });
-  }
-};
 
 const initializeDownloadSchema = async () => {
   const applicationsDir = path.join(__dirname, 'files/applications');
@@ -127,13 +124,17 @@ const initializeDownloadSchema = async () => {
 initializeDownloadSchema().catch(console.error);
 
 app.use('/sso', loginRoutes);
+app.use('/email', emailRoutes);
+app.use('/cart', cartRoutes)
 app.use(express.static('public'));
-app.use('/careers', validateToken, careerRoutes);
 app.use('/version', versionRoutes);
+app.use('/updates', updateRoutes);
+app.use('/paypal-api', paypalRoutes);
 app.use('/download', downloadRoutes);
 app.use('/user', validateToken, userRoutes);
 app.use('/tickets', validateToken, ticketRoutes);
-app.use('/updates', updateRoutes);
+app.use('/careers', validateToken, careerRoutes);
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
