@@ -58,15 +58,13 @@ async function getAccessToken() {
 
 router.get("/auth/browser-safe-client-token", async (req, res) => {
   try {
-    console.log("GET /auth/browser-safe-client-token called");
     const tokenData = await getClientToken();
-    if (!tokenData.access_token) {
-      console.error("Missing access_token in response:", tokenData);
+    if (!tokenData.client_token) {
+      console.error("Missing client_token in response:", tokenData);
       return res.status(500).json({ error: "client_token_missing" });
     }
-    console.log("Returning client token to frontend");
     res.json({
-      accessToken: tokenData.access_token,
+      clientToken: tokenData.client_token,
       expiresIn: tokenData.expires_in,
     });
   } catch (err) {
@@ -74,6 +72,7 @@ router.get("/auth/browser-safe-client-token", async (req, res) => {
     res.status(500).json({ error: "client_token_failed" });
   }
 });
+
 
 router.post("/checkout/orders/create", async (req, res) => {
   try {
