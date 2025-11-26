@@ -44,11 +44,21 @@ async function getClientToken() {
     body: JSON.stringify({})
   });
 
-  const data = await res.json();
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    console.error("PayPal returned invalid JSON:", text);
+    throw new Error("paypal_invalid_json");
+  }
+
   console.log("generate-client-token response:", data);
 
   return data.client_token;
 }
+
 
 
 router.get("/auth/browser-safe-client-token", async (req, res) => {
