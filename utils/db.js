@@ -5,7 +5,7 @@ dotenv.config();
 
 const pool = mysql.createPool({
   uri: process.env.MYSQL_URL,
-  connectionLimit: 5,
+  connectionLimit: 2,
 });
 
 module.exports = pool.promise();
