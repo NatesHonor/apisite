@@ -42,6 +42,8 @@ async function getClientToken() {
     }
   });
   const data = await res.json();
+  console.log(data);
+
   return data.client_token;
 }
 
