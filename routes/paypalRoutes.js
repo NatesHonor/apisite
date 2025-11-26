@@ -32,18 +32,15 @@ async function getAccessToken() {
 
 async function getClientToken() {
   const accessToken = await getAccessToken();
-
   const res = await fetch(`${PAYPAL_API_BASE}/v1/identity/generate-token`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-    },
-    body: JSON.stringify({})
+    }
   });
-
   const data = await res.json();
-  return data;
+  return data.client_token;
 }
 
 router.get("/auth/browser-safe-client-token", async (req, res) => {
