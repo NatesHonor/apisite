@@ -27,6 +27,8 @@ async function getAccessToken() {
   });
 
   const data = await res.json();
+  console.log(data);
+
   return data.access_token;
 }
 
@@ -46,7 +48,6 @@ async function getClientToken() {
 router.get("/auth/browser-safe-client-token", async (req, res) => {
   try {
     const tokenData = await getClientToken();
-    console.log(tokenData);
     if (!tokenData.client_token) {
       return res.status(500).json({ error: "client_token_missing" });
     }
