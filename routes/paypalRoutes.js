@@ -42,21 +42,19 @@ async function getClientToken() {
     }
   });
   const data = await res.json();
-  console.log(data);
-
+  console.log("generate-token response:", data);
   return data.client_token;
 }
 
 router.get("/auth/browser-safe-client-token", async (req, res) => {
   try {
-    const tokenData = await getClientToken();
-    if (!tokenData.client_token) {
+    const clientToken = await getClientToken();
+    if (!clientToken) {
       return res.status(500).json({ error: "client_token_missing" });
     }
-    res.json({
-      clientToken: tokenData.client_token,
-    });
+    res.json({ clientToken });
   } catch (err) {
+    console.error("Failed to get client token", err);
     res.status(500).json({ error: "client_token_failed" });
   }
 });
