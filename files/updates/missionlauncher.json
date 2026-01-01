@@ -1,0 +1,15 @@
+{
+  "version": "1.2.0",
+  "mandatory": true,
+  "url": "https://api.natemarcellus.com/download/MissionchiefBotX/latest",
+  "checksum": {
+    "algorithm": "SHA256",
+    "value": "abc123def456..."
+  },
+  "signature": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...",
+  "notes": [
+    "Fixed stop button not working",
+    "Added bot autoupdating",
+    "Added sign in button"
+  ]
+}

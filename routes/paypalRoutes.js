@@ -60,7 +60,6 @@ async function getClientToken() {
 }
 
 
-
 router.get("/auth/browser-safe-client-token", async (req, res) => {
   try {
     const clientToken = await getClientToken();
