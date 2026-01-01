@@ -1,7 +1,7 @@
 {
   "version": "1.2.0",
   "mandatory": true,
-  "url": "https://api.natemarcellus.com/download/MissionchiefBotX/latest",
+  "url": "https://api.natemarcellus.com/download/MissionchiefLauncher/latest",
   "checksum": {
     "algorithm": "SHA256",
     "value": "abc123def456..."
