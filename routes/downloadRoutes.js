@@ -1,52 +1,80 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const redisClient = require('../utils/redisClient');
-const router = express.Router();
+const express = require('express')
+const path = require('path')
+const fs = require('fs')
+const redisClient = require('../utils/redisClient')
+
+const router = express.Router()
+
+const BASE_DIR = path.resolve(__dirname, '../files/applications')
+const APP_REGEX = /^[a-zA-Z0-9_-]+$/
+const VERSION_REGEX = /^(latest|\d+\.\d+\.\d+)$/
 
 const trackDownload = async (appKey) => {
   try {
-    const newCount = await redisClient.incr(`downloads:${appKey}`);
+    await redisClient.incr(`downloads:${appKey}`)
   } catch (err) {
-    console.error(`Failed to track download for ${appKey}:`, err);
+    console.error('Download tracking failed', err)
   }
-};
+}
 
 router.get('/info/:application', async (req, res) => {
-  try {
-    const appName = req.params.application;
-    const count = await redisClient.get(`downloads:${appName}`);
-    if (count === null) return res.status(404).json({ success: false, message: 'Application not found' });
-    res.json({ name: appName, downloads: Number(count) });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+  const appName = req.params.application
+
+  if (!APP_REGEX.test(appName)) {
+    return res.status(400).json({ success: false })
   }
-});
+
+  try {
+    const count = await redisClient.get(`downloads:${appName}`)
+    if (count === null) {
+      return res.status(404).json({ success: false })
+    }
+    res.json({ name: appName, downloads: Number(count) })
+  } catch {
+    res.status(500).json({ success: false })
+  }
+})
 
 router.get('/:application/:version', async (req, res) => {
-  const { application, version } = req.params;
-  const baseDir = path.join(__dirname, '../files/applications', application);
-  const appKey = application;
-  const possibleFiles = version === 'latest'
-    ? [path.join(baseDir, 'latest.exe'), path.join(baseDir, 'latest.zip')]
-    : [path.join(baseDir, `${version}.exe`), path.join(baseDir, `${version}.zip`)];
-  let filePath = null;
-  for (const file of possibleFiles) {
+  const { application, version } = req.params
+
+  if (!APP_REGEX.test(application) || !VERSION_REGEX.test(version)) {
+    return res.status(400).json({ success: false })
+  }
+
+  const appDir = path.resolve(BASE_DIR, application)
+  if (!appDir.startsWith(BASE_DIR)) {
+    return res.status(403).json({ success: false })
+  }
+
+  const filenames =
+    version === 'latest'
+      ? ['latest.exe', 'latest.zip']
+      : [`${version}.exe`, `${version}.zip`]
+
+  let filePath = null
+
+  for (const name of filenames) {
+    const resolved = path.resolve(appDir, name)
+    if (!resolved.startsWith(appDir)) continue
     try {
-      await fs.promises.access(file, fs.constants.F_OK);
-      filePath = file;
-      break;
+      await fs.promises.access(resolved, fs.constants.R_OK)
+      filePath = resolved
+      break
     } catch {}
   }
-  if (!filePath) return res.status(404).json({ success: false, message: 'File not found' });
-  try {
-    await trackDownload(appKey);
-  } catch (err) {
-    console.error(`Error tracking download for ${appKey}:`, err);
-  }
-  res.download(filePath, (err) => {
-    if (err && !res.headersSent) res.status(500).json({ success: false, message: 'Error during download' });
-  });
-});
 
-module.exports = router;
+  if (!filePath) {
+    return res.status(404).json({ success: false })
+  }
+
+  trackDownload(application)
+
+  res.download(filePath, err => {
+    if (err && !res.headersSent) {
+      res.status(500).json({ success: false })
+    }
+  })
+})
+
+module.exports = router
