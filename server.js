@@ -127,7 +127,7 @@ app.use('/paypal-api', paypalRoutes)
 app.use('/download', downloadRoutes)
 app.use('/user', validateToken, userRoutes)
 app.use('/tickets', validateToken, ticketRoutes)
-app.use('/careers', validateToken, careerRoutes)
+app.use('/careers', careerRoutes)
 
 app.use(express.static('public', {
   maxAge: '1d',
