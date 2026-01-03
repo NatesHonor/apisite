@@ -39,6 +39,32 @@ const allowedOrigins = new Set([
   'http://localhost:3000'
 ])
 
+
+const csrfGuard = (req, res, next) => {
+  const method = req.method
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    return next()
+  }
+
+  const origin = req.headers.origin
+  const referer = req.headers.referer
+
+  if (origin && allowedOrigins.has(origin)) {
+    return next()
+  }
+
+  if (referer) {
+    try {
+      const url = new URL(referer)
+      if (allowedOrigins.has(url.origin)) {
+        return next()
+      }
+    } catch {}
+  }
+
+  return res.status(403).json({ error: 'csrf_blocked' })
+}
+
 mongoose.connect(process.env.MONGO_URI, {
   maxPoolSize: 20,
   serverSelectionTimeoutMS: 5000,
@@ -92,30 +118,7 @@ app.use(session({
   }
 }))
 
-const csrfGuard = (req, res, next) => {
-  const method = req.method
-  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-    return next()
-  }
 
-  const origin = req.headers.origin
-  const referer = req.headers.referer
-
-  if (origin && allowedOrigins.has(origin)) {
-    return next()
-  }
-
-  if (referer) {
-    try {
-      const url = new URL(referer)
-      if (allowedOrigins.has(url.origin)) {
-        return next()
-      }
-    } catch {}
-  }
-
-  return res.status(403).json({ error: 'csrf_blocked' })
-}
 
 const validateToken = (req, res, next) => {
   const token =
