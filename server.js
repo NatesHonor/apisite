@@ -11,6 +11,7 @@ const helmet = require('helmet')
 const compression = require('compression')
 const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
+const csurf = require('csurf')
 const path = require('path')
 const fs = require('fs')
 
@@ -91,6 +92,14 @@ app.use(session({
   }
 }))
 
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
+})
+
 const validateToken = (req, res, next) => {
   const token =
     req.cookies.auth ||
@@ -118,13 +127,15 @@ const initializeDownloadSchema = async () => {
 
 initializeDownloadSchema()
 
-app.use('/sso', loginRoutes)
-app.use('/email', emailRoutes)
-app.use('/cart', cartRoutes)
+app.use('/sso', csrfProtection, loginRoutes)
+app.use('/email', csrfProtection, emailRoutes)
+app.use('/cart', csrfProtection, cartRoutes)
+
 app.use('/version', versionRoutes)
 app.use('/updates', updateRoutes)
 app.use('/paypal-api', paypalRoutes)
 app.use('/download', downloadRoutes)
+
 app.use('/user', validateToken, userRoutes)
 app.use('/tickets', validateToken, ticketRoutes)
 app.use('/careers', careerRoutes)
@@ -139,6 +150,9 @@ app.get('/', (req, res) => {
 })
 
 app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ error: 'invalid_csrf_token' })
+  }
   res.status(500).json({ error: 'Internal server error' })
 })
 
