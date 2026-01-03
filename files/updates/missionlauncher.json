@@ -10,7 +10,8 @@
   "notes": [
     "Added region selection (Experimental)",
     "Fixed issue with update reprompting after user declined",
-    "Launcher settings now copy over"
+    "Launcher settings now copy over",
+    "Fixed auto update bug"
 
   ]
 }
