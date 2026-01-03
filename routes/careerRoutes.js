@@ -7,8 +7,34 @@ const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
 const path = require('path');
-
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/')
+    },
+    filename: (req, file, cb) => {
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+      cb(null, `${Date.now()}-${safeName}`)
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+    fields: 10,
+    parts: 15
+  },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type'))
+    }
+    cb(null, true)
+  }
+})
 
 const validateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -79,34 +105,39 @@ router.post('/post', validateToken, async (req, res) => {
   }
 });
 
-router.post('/apply', upload.single('resume'), async (req, res) => {
-  try {
-    const application = new Application(req.body);
-    await application.save();
+router.post('/apply', (req, res) => {
+  upload.single('resume')(req, res, async err => {
+    if (err) {
+      return res.status(400).json({ error: 'Invalid upload' })
+    }
 
-    const resumePath = req.file.path;
-    const form = new FormData();
-    form.append('file', fs.createReadStream(resumePath));
+    try {
+      const application = new Application(req.body)
+      await application.save()
 
-    const driveUrl = `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
+      const resumePath = req.file.path
+      const form = new FormData()
+      form.append('file', fs.createReadStream(resumePath))
 
-    const metadata = {
-      name: req.file.originalname,
-      mimeType: req.file.mimetype,
-    };
-    const response = await axios.post(driveUrl, form, {
-      headers: {
-        ...form.getHeaders(),
-        'Content-Type': `multipart/related; boundary=${form._boundary}`,
-      },
-    });
-    fs.unlinkSync(resumePath);
+      const driveUrl = `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${process.env.GOOGLE_DRIVE_API_KEY}`
 
-    res.status(201).json({ application, driveFileId: response.data.id });
-  } catch (error) {
-    console.error('Error submitting application:', error);
-    res.status(400).json({ error: 'Failed to submit application' });
-  }
-});
+      const response = await axios.post(driveUrl, form, {
+        headers: form.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      })
+
+      fs.unlink(resumePath, () => {})
+
+      res.status(201).json({
+        application,
+        driveFileId: response.data.id
+      })
+    } catch (error) {
+      if (req.file?.path) fs.unlink(req.file.path, () => {})
+      res.status(400).json({ error: 'Failed to submit application' })
+    }
+  })
+})
 
 module.exports = router;
