@@ -50,6 +50,7 @@ createTables()
 app.use(helmet())
 app.use(compression())
 app.use(express.json({ limit: '1mb' }))
+app.use(csrfGuard)
 app.use(cookieParser())
 
 app.use(cors({
