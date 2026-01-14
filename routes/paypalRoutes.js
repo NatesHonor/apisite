@@ -1,82 +1,50 @@
-const express = require("express")
-const router = express.Router()
-require("dotenv").config()
+const express = require("express");
+const router = express.Router();
+require("dotenv").config();
 
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
-const PAYPAL_ENV = process.env.PAYPAL_ENV || "sandbox"
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 
-const PAYPAL_API_BASE =
-  PAYPAL_ENV === "live"
-    ? "https://api-m.paypal.com"
-    : "https://api-m.sandbox.paypal.com"
+const PAYPAL_API_BASE = "https://api-m.paypal.com";
 
-const ORDER_ID_REGEX = /^[A-Z0-9\-]{10,}$/i
+const ORDER_ID_REGEX = /^[A-Z0-9\-]{10,}$/i;
 
 async function getAccessToken() {
-  const params = new URLSearchParams()
-  params.append("grant_type", "client_credentials")
+  const params = new URLSearchParams();
+  params.append("grant_type", "client_credentials");
 
   const auth = Buffer.from(
     `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
-  ).toString("base64")
+  ).toString("base64");
 
   const res = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${auth}`,
-      "Content-Type": "application/x-www-form-urlencoded"
+      "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params.toString(),
-    signal: AbortSignal.timeout(5000)
-  })
+    signal: AbortSignal.timeout(5000),
+  });
 
-  const data = await res.json()
-  return data.access_token
-}
+  const data = await res.json();
 
-async function getClientToken() {
-  const accessToken = await getAccessToken()
-
-  const res = await fetch(
-    `${PAYPAL_API_BASE}/v1/checkout/orders/generate-client-token`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({}),
-      signal: AbortSignal.timeout(5000)
-    }
-  )
-
-  const text = await res.text()
-  const data = JSON.parse(text)
-  return data.client_token
-}
-
-router.get("/auth/browser-safe-client-token", async (req, res) => {
-  try {
-    const clientToken = await getClientToken()
-    if (!clientToken || typeof clientToken !== "string") {
-      return res.status(500).json({ error: "client_token_missing" })
-    }
-    res.json({ clientToken })
-  } catch {
-    res.status(500).json({ error: "client_token_failed" })
+  if (!res.ok) {
+    throw new Error(`PayPal OAuth failed: ${JSON.stringify(data)}`);
   }
-})
+
+  return data.access_token;
+}
 
 router.post("/checkout/orders/create", async (req, res) => {
   try {
-    const accessToken = await getAccessToken()
-    const cart = req.session.cart || []
+    const accessToken = await getAccessToken();
+    const cart = req.session.cart || [];
 
     const subtotal = cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
-    )
+    );
 
     const payload = {
       intent: "CAPTURE",
@@ -84,11 +52,15 @@ router.post("/checkout/orders/create", async (req, res) => {
         {
           amount: {
             currency_code: "USD",
-            value: subtotal.toFixed(2)
-          }
-        }
-      ]
-    }
+            value: subtotal.toFixed(2),
+          },
+        },
+      ],
+      application_context: {
+        return_url: "https://www.natemarcellus.com/checkout/success",
+        cancel_url: "https://www.natemarcellus.com/book/checkout",
+      },
+    };
 
     const response = await fetch(
       `${PAYPAL_API_BASE}/v2/checkout/orders`,
@@ -96,50 +68,62 @@ router.post("/checkout/orders/create", async (req, res) => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
       }
-    )
+    );
 
-    const data = await response.json()
-    res.json(data)
-  } catch {
-    res.status(500).json({ error: "order_create_failed" })
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("PayPal order create error:", data);
+      return res.status(500).json({ error: "order_create_failed" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Order create exception:", err);
+    res.status(500).json({ error: "order_create_failed" });
   }
-})
+});
 
 router.post("/checkout/orders/:orderId/capture", async (req, res) => {
   try {
-    const { orderId } = req.params
+    const { orderId } = req.params;
 
     if (!ORDER_ID_REGEX.test(orderId)) {
-      return res.status(400).json({ error: "invalid_order_id" })
+      return res.status(400).json({ error: "invalid_order_id" });
     }
 
-    const accessToken = await getAccessToken()
+    const accessToken = await getAccessToken();
 
-    const url = new URL(
-      `/v2/checkout/orders/${orderId}/capture`,
-      PAYPAL_API_BASE
-    )
+    const response = await fetch(
+      `${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(5000),
+      }
+    );
 
-    const response = await fetch(url.toString(), {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({}),
-      signal: AbortSignal.timeout(5000)
-    })
+    const data = await response.json();
 
-    const data = await response.json()
-    res.json(data)
-  } catch {
-    res.status(500).json({ error: "order_capture_failed" })
+    if (!response.ok) {
+      console.error("PayPal capture error:", data);
+      return res.status(500).json({ error: "order_capture_failed" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Order capture exception:", err);
+    res.status(500).json({ error: "order_capture_failed" });
   }
-})
+});
 
-module.exports = router
+module.exports = router;
